@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ADR 0005: Varve's packages read the Turtle and run the shapes. Pinned. -->
+    <PackageVersion Include="Varve.Turtle" Version="0.1.0-preview.20" />
+    <PackageVersion Include="Varve.Shacl" Version="0.1.0-preview.20" />
+    <PackageVersion Include="Varve.Shacl.Sparql" Version="0.1.0-preview.20" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Tests only. -->
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+  </ItemGroup>
+</Project>

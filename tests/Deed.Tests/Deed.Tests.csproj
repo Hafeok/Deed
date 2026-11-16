@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Deed.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Deed.Vocabulary\Deed.Vocabulary.csproj" />
+    <!-- Built so that the exit-code tests can run the tool itself. -->
+    <ProjectReference Include="..\..\src\Deed.Tool\Deed.Tool.csproj" />
+  </ItemGroup>
+
+</Project>

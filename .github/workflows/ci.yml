@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release
+
+      - name: Pack the tool
+        run: dotnet pack src/Deed.Tool --no-build --configuration Release --output artifacts
+
+      - name: Check the package
+        run: |
+          set -euo pipefail
+          package=$(ls artifacts/Deed.Tool.*.nupkg)
+          unzip -l "$package"
+          for entry in README.md LICENSE DotnetToolSettings.xml Deed.Vocabulary.dll Varve.Shacl.Sparql.dll; do
+            unzip -l "$package" | grep -q "$entry" || { echo "missing $entry in $package"; exit 1; }
+          done
+          dotnet tool install --tool-path artifacts/tool --add-source artifacts --prerelease Deed.Tool
+          artifacts/tool/deed validate maps/varve/varve-acts.ttl

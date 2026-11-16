@@ -1,0 +1,23 @@
+# A deliberately broken act map. Every shape must fire on it: a clean pass
+# on the real maps proves little without this. Not an example to copy.
+
+@prefix cli:   <https://w3id.org/deed/cli#> .
+@prefix deed:  <https://w3id.org/deed/ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix x: <https://example.org/x#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+x:Lease a deed:Resource ; deed:name "lease" ; rdfs:comment "A lease." .
+x:take a deed:Verb ; deed:name "take" ; rdfs:comment "Take it." .
+x:Op a deed:Actor ; rdfs:label "operator" ; rdfs:comment "Holds the operator role." .
+x:LeaseState a deed:State ; rdfs:comment "Who holds the lease." .
+x:force a deed:Parameter ; deed:name "force" ; deed:role deed:Modifier ; deed:datatype xsd:boolean ; deed:required true ; rdfs:comment "Really." .
+x:path a deed:Parameter ; deed:name "force" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ; cli:env "path" .
+# 1: changes state, declares no failure; no context facet; outcome missing
+x:TakeLease a deed:Act ; rdfs:comment "Take the lease." ;
+    deed:resource x:Lease ; deed:verb x:take ; deed:actor x:Op ;
+    deed:input ( x:force ) ;
+    deed:needs deed:Nothing , x:LeaseState ;
+    deed:changes [ deed:state x:LeaseState ; deed:manner deed:Converges ] ;
+    deed:failure deed:Nothing .
+# 2: same resource and verb; nothing else said
+x:GrabLease a deed:Act ; deed:resource x:Lease ; deed:verb x:take .
