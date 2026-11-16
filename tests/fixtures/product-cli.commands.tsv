@@ -1,0 +1,33 @@
+act	command	operands	options	flags	read-only	destructive	idempotent	exit-codes	note
+https://w3id.org/deed/maps/product-cli#AdoptProposal	product proposal adopt	[proposals...]	--product --why	--all	false	true	false		
+https://w3id.org/deed/maps/product-cli#AnswerQuestion	product question answer	id answer	--product --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreateNode	product domain new	kind id	--product --property* --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreatePrimitive	product primitive new	id	--product --property* --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreateProduct	product product new		--product --purpose --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreateProposal	product proposal new	change-set reason	--product		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreateQuestion	product question new	id	--product --property* --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#CreateScenario	product scenario new	id	--product --property* --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#DeriveDecider	product decider derive	aggregate	--product --why		false	true	false		
+https://w3id.org/deed/maps/product-cli#DeriveProjector	product projector derive	view	--product --why		false	true	false		
+https://w3id.org/deed/maps/product-cli#DiffDraft	product diff	[from-position] [to-position]	--export --product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ExportWhat	product domain export		--format --product --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#InitDraft	product init			--demo	false	false	false		
+https://w3id.org/deed/maps/product-cli#ListFormats					true	false	true		recorded spelling: domain export --list-formats
+https://w3id.org/deed/maps/product-cli#ListNodes	product domain list		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ListProducts	product product list		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ListProposals	product proposal list		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ListQuestions	product question list		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ListScenarios	product scenario list		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#RejectProposal	product proposal reject	[proposals...]	--product --why		false	true	false		
+https://w3id.org/deed/maps/product-cli#RemoveNode	product domain rm	id	--product --why		false	false	false		
+https://w3id.org/deed/maps/product-cli#RunConformance	product conformance run	runner	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#RunScenario	product scenario run		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ShowNode	product domain show	id	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ShowProduct	product product show		--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ShowProposal	product proposal show	[proposals...]	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#SimulateDecider	product decider simulate	aggregate	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#SimulateProjector	product projector simulate	view	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ValidateDecider	product decider validate	aggregate	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ValidatePrimitive	product primitive validate	id	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ValidateProjector	product projector validate	view	--product		true	false	true		
+https://w3id.org/deed/maps/product-cli#ValidateWhat	product domain validate		--product	--strict	true	false	true		

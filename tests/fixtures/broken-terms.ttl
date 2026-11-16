@@ -1,0 +1,104 @@
+# A deliberately broken act map, second of two. Not an example to copy.
+#
+# broken.ttl stays small and shows two bad acts. This one breaks the things
+# acts use (resources, verbs, actors, parameters, contexts, settings, states,
+# failures) and the CLI binding layer, so that every message in
+# deed-shapes.ttl is carried by some result in the repository's fixtures
+# (issue #36).
+
+@prefix cli:  <https://w3id.org/deed/cli#> .
+@prefix deed: <https://w3id.org/deed/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix y:    <https://example.org/y#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# ---- sound terms the broken acts lean on
+
+y:Shelf a deed:Resource ; deed:name "shelf" ; rdfs:comment "A shelf." .
+y:Room a deed:Resource ; deed:name "room" ; rdfs:comment "A room." .
+y:show a deed:Verb ; deed:name "show" ; rdfs:comment "Give it as it is." .
+y:Keeper a deed:Actor ; rdfs:label "keeper" ; rdfs:comment "Holds the key." .
+y:Stock a deed:State ; rdfs:comment "What is on the shelves." .
+y:Missing a deed:Failure ; deed:name "missing" ; rdfs:comment "Not there. Look again." .
+y:title a deed:Parameter ; deed:name "title" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ; rdfs:comment "The title." .
+
+# ---- the things acts use, each broken
+
+# name not lower-case hyphenated; no comment; part of two resources
+y:BadResource a deed:Resource ; deed:name "Book Case" ; deed:within y:Shelf , y:Room .
+# name not a single lower-case token; no comment
+y:BadVerb a deed:Verb ; deed:name "Move_Books" .
+# no label, no comment
+y:BadActor a deed:Actor .
+# no comment
+y:BadState a deed:State .
+# name in upper case; no comment
+y:BadFailure a deed:Failure ; deed:name "NOT_FOUND" .
+# name with a space; no role; no datatype; no required
+y:BadParameter a deed:Parameter ; deed:name "bad name" ; rdfs:comment "A parameter." .
+# a subject that is a yes-or-no; a short name of two characters
+y:BadSubject a deed:Parameter ; deed:name "really" ; deed:role deed:Subject ; deed:datatype xsd:boolean ; deed:required false ; cli:short "rr" ; rdfs:comment "Really." .
+# name in upper case; no datatype; no comment
+y:BadSetting a deed:Setting ; deed:name "API_KEY" .
+# no comment, no setting, no failure facet
+y:BadContext a deed:Context .
+# an exit code of 1, which is the rule
+y:BadExit a deed:Failure ; deed:name "bad-exit" ; rdfs:comment "Exits wrongly." ; cli:exitCode 1 .
+# an exit code on something that is not a failure
+y:Stock cli:exitCode 3 .
+
+# ---- acts, each breaking one facet's second rule
+
+# two resources, two verbs
+y:TwoOfEach a deed:Act ; rdfs:comment "Does two things to two things." ;
+    deed:resource y:Shelf , y:Room ; deed:verb y:show , y:BadVerb ;
+    deed:actor y:Keeper ; deed:input deed:Nothing ; deed:context deed:Nothing ;
+    deed:needs deed:Nothing ; deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields y:Listing ] ;
+    deed:failure deed:Nothing .
+
+# input that is neither a list nor nothing; context, needs and failure that
+# are not what the facet takes; a change with no manner; an outcome that is
+# neither single nor stream
+y:WrongKinds a deed:Act ; rdfs:comment "Says each facet with the wrong kind of thing." ;
+    deed:resource y:Shelf ; deed:verb y:show ;
+    deed:actor y:Keeper ;
+    deed:input y:title ;
+    deed:context y:Stock ;
+    deed:needs y:Missing ;
+    deed:changes [ deed:state y:Stock ] ;
+    deed:outcome [ deed:yields y:Listing ] ;
+    deed:failure y:Stock .
+
+# a list whose member is not a parameter
+y:ListOfOthers a deed:Act ; rdfs:comment "Lists a state as input." ;
+    deed:resource y:Room ; deed:verb y:show ;
+    deed:actor y:Keeper ;
+    deed:input ( y:title y:Stock ) ;
+    deed:context deed:Nothing ; deed:needs deed:Nothing ; deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields y:Listing ] ;
+    deed:failure deed:Nothing .
+
+# nothing said together with something, in context, changes and failure
+y:NothingAndSomething a deed:Act ; rdfs:comment "Says nothing and something at once." ;
+    deed:resource y:BadResource ; deed:verb y:show ;
+    deed:actor y:Keeper ;
+    deed:input deed:Nothing ;
+    deed:context deed:Nothing , y:BadContext ;
+    deed:needs deed:Nothing ;
+    deed:changes deed:Nothing , [ deed:state y:Stock ; deed:manner deed:Creates ] ;
+    deed:outcome [ a deed:Single ; deed:yields y:Listing ] ;
+    deed:failure deed:Nothing , y:Missing .
+
+# ---- the CLI binding layer
+
+# no command; two default resources; two default verbs
+y:Tool a cli:Tool ;
+    cli:defaultResource y:Shelf , y:Room ;
+    cli:defaultVerb y:show , y:BadVerb .
+# a command that is not one lower-case word
+y:Tool2 a cli:Tool ; cli:command "My Tool" .
+# a CLI-only option that does not say why
+y:BadOption a cli:SurfaceOption ; deed:name "colour" ; deed:datatype xsd:boolean .
+# a host that does not say what it does
+y:BadHost a cli:Host ; deed:name "daemon" .

@@ -1,0 +1,48 @@
+severity	focus	shape	message
+Violation	https://example.org/y#BadActor	_:property-shape	What is this role called by the people who grant it?
+Violation	https://example.org/y#BadActor	_:property-shape	What makes someone this actor: a grant, a credential, access to a place? If the answer names a person or a program, it is an identity, not a role.
+Violation	https://example.org/y#BadContext	_:property-shape	How does this context fail every act that uses it: unreachable, refused, held by another? Name each, or say deed:Nothing. Stating it here keeps it out of every act.
+Violation	https://example.org/y#BadContext	_:property-shape	What does this context stand for, and for how long is it fixed: a session, a deployment?
+Violation	https://example.org/y#BadContext	_:property-shape	What must the environment supply for this context to exist? A context with no settings is not supplied by anything.
+Violation	https://example.org/y#BadExit	_:property-shape	A failure exits 1 unless it says otherwise, and 0 is success. What does a script do differently on this code that it could not do on 1?
+Violation	https://example.org/y#BadFailure	_:property-shape	A failure has one name that a program can match on, lower case, hyphenated. Name what went wrong, not where it was noticed.
+Violation	https://example.org/y#BadFailure	_:property-shape	What should the actor do next when this happens: retry, look again, fix the input, ask someone? A failure that does not say is only an error message.
+Violation	https://example.org/y#BadHost	_:property-shape	What does this command do until it is stopped? If it ever returns something on success, the part that returns is an act.
+Violation	https://example.org/y#BadOption	_:property-shape	Why does only the command line need this option? If an agent or an HTTP client would want it too, it is a parameter of the act.
+Violation	https://example.org/y#BadParameter	_:property-shape	A parameter has one name, lower case, hyphenated, and the name means this one thing in every act of the tool. What is it called?
+Violation	https://example.org/y#BadParameter	_:property-shape	Can the act proceed without this parameter? Say true or false. If it is required only when another parameter is given, there are probably two acts here.
+Violation	https://example.org/y#BadParameter	_:property-shape	Is this parameter what the act is performed on (subject), or how it is performed (modifier)? Test: take it away. If the act has nothing left to do, it is a subject.
+Violation	https://example.org/y#BadParameter	_:property-shape	What kind of value is this? If it is the content of a file, say deed:Document rather than a path: only one surface has paths.
+Violation	https://example.org/y#BadResource	_:property-shape	A resource has one name: a singular noun, lower case, hyphenated. What do the people who operate this tool call the thing?
+Violation	https://example.org/y#BadResource	_:property-shape	A resource is part of at most one other. If it seems to belong to two, which one would it not exist without?
+Violation	https://example.org/y#BadResource	_:property-shape	What is this resource, in one sentence? If it cannot be told apart from another resource, it may be a state of that one.
+Violation	https://example.org/y#BadSetting	_:property-shape	A setting has one name, lower case, hyphenated. What is it called in configuration?
+Violation	https://example.org/y#BadSetting	_:property-shape	What is this setting, and what happens when the environment does not supply it?
+Violation	https://example.org/y#BadSetting	_:property-shape	What kind of value does the environment supply here?
+Violation	https://example.org/y#BadState	_:property-shape	What is this state, and who may read it and who may write it? If the answer is the same as for another state, they may be one.
+Violation	https://example.org/y#BadSubject	_:property-shape	A short name is one letter or digit, and a tool has few. Is this option typed often enough to spend one on?
+Violation	https://example.org/y#BadSubject	https://w3id.org/deed/shapes#SubjectIsNotAFlag	A yes-or-no value says how an act is done, never what it is done to. Is this a modifier, or is 'yes' really a different act?
+Violation	https://example.org/y#BadVerb	_:property-shape	A verb has one name: a single verb in the imperative, lower case. If the name contains a noun (move-events, watch-kubernetes), the noun is a resource: what is it?
+Violation	https://example.org/y#BadVerb	_:property-shape	What does this verb mean on any resource? If the meaning changes with the resource, it is two verbs.
+Violation	https://example.org/y#ListOfOthers	_:property-shape	Everything in an act's input is a parameter defined for the whole tool. Is this a new parameter, or one that already has a name elsewhere in the tool?
+Violation	https://example.org/y#ListOfOthers	https://w3id.org/deed/shapes#ActIsUnique	This act and https://example.org/y#TwoOfEach have the same resource and the same verb. Are they one act with a parameter, or is one of them about a resource that has not been named?
+Violation	https://example.org/y#NothingAndSomething	https://w3id.org/deed/shapes#ActChangesNothingAlone	This act says it changes nothing and also names a change. Which is it?
+Violation	https://example.org/y#NothingAndSomething	https://w3id.org/deed/shapes#ActContextNothingAlone	This act says it has no context and also names one. Which is it?
+Violation	https://example.org/y#NothingAndSomething	https://w3id.org/deed/shapes#ActFailuresNothingAlone	This act says it cannot fail on its own account and also names a failure. Which is it?
+Violation	https://example.org/y#NothingAndSomething	https://w3id.org/deed/shapes#ActThatChangesCanFail	This act changes https://example.org/y#Stock but declares no failure of its own. What happens when https://example.org/y#Stock is not as the actor expects: already there, already held, moved on since they looked?
+Violation	https://example.org/y#Stock	https://w3id.org/deed/shapes#ExitCode	Only a failure has an exit code of its own. If success needs to signal something by exit code, what is it that the outcome does not already say?
+Violation	https://example.org/y#Tool	_:property-shape	Only one resource can go unnamed on the command line. Which one is the tool about?
+Violation	https://example.org/y#Tool	_:property-shape	Only one verb can go unsaid on the command line. Which is what a user means by naming a resource and nothing else?
+Violation	https://example.org/y#Tool	_:property-shape	What does the user type to run this tool? One lower-case word.
+Violation	https://example.org/y#Tool2	_:property-shape	What does the user type to run this tool? One lower-case word.
+Violation	https://example.org/y#TwoOfEach	_:property-shape	An act has exactly one verb from the controlled list. What does this act do to its resource? If no listed verb fits, is the act really new, or is it an existing verb on a resource you have not named yet?
+Violation	https://example.org/y#TwoOfEach	_:property-shape	An act is about exactly one resource. What is this act done to? If the answer is two things, it is two acts; if the answer is 'the tool itself', name that as a resource.
+Violation	https://example.org/y#TwoOfEach	https://w3id.org/deed/shapes#ActIsUnique	This act and https://example.org/y#ListOfOthers have the same resource and the same verb. Are they one act with a parameter, or is one of them about a resource that has not been named?
+Violation	https://example.org/y#TwoOfEach	https://w3id.org/deed/shapes#ActIsUnique	This act and https://example.org/y#WrongKinds have the same resource and the same verb. Are they one act with a parameter, or is one of them about a resource that has not been named?
+Violation	https://example.org/y#WrongKinds	_:property-shape	A change names one state and the manner it is written in: creates, appends, converges or removes. Which state, and what is left of what was there before?
+Violation	https://example.org/y#WrongKinds	_:property-shape	A context is declared once for the tool, with its settings and its failures. Is this a context the tool already has?
+Violation	https://example.org/y#WrongKinds	_:property-shape	A failure is declared once for the tool, with a name and what the actor should do next. Is this one the tool already has?
+Violation	https://example.org/y#WrongKinds	_:property-shape	Is the outcome complete when the act ends (deed:Single), or does it arrive piece by piece and possibly never end (deed:Stream)? A surface that cannot stream has to know which.
+Violation	https://example.org/y#WrongKinds	_:property-shape	The input is an ordered list of parameters, or deed:Nothing. Order matters: it is the order an actor states the subjects in.
+Violation	https://example.org/y#WrongKinds	_:property-shape	What an act needs is a named state of the tool. Is this a state the tool already has, under another name?
+Violation	https://example.org/y#WrongKinds	https://w3id.org/deed/shapes#ActIsUnique	This act and https://example.org/y#TwoOfEach have the same resource and the same verb. Are they one act with a parameter, or is one of them about a resource that has not been named?
