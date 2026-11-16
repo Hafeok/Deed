@@ -1,0 +1,7 @@
+severity	focus	shape	message
+Info	https://w3id.org/deed/maps/product-cli#Node	_:property-shape	This is spelled differently on the command line than everywhere else. Which of the two names is the right one?
+Info	https://w3id.org/deed/maps/product-cli#What	_:property-shape	This is spelled differently on the command line than everywhere else. Which of the two names is the right one?
+Info	https://w3id.org/deed/maps/product-cli#create	_:property-shape	This is spelled differently on the command line than everywhere else. Which of the two names is the right one?
+Info	https://w3id.org/deed/maps/product-cli#remove	_:property-shape	This is spelled differently on the command line than everywhere else. Which of the two names is the right one?
+Warning	https://w3id.org/deed/maps/product-cli#ListFormats	_:property-shape	This act's command line is recorded, not derived: no resource path and verb spell it. Nothing can be generated for it. What would it be called as a command of its own?
+Warning	https://w3id.org/deed/maps/product-cli#Review	_:property-shape	This act's command line is recorded, not derived: no resource path and verb spell it. Nothing can be generated for it. What would it be called as a command of its own?
