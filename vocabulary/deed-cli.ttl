@@ -1,0 +1,98 @@
+# Deed: the CLI binding layer.
+# Draft 1, 2026-11-15. Working draft.
+#
+# The CLI is derived from the act layer by rule (findings, section 3). This
+# vocabulary holds only what the rules cannot derive. Each term names the
+# Varve command that forced it. MCP and REST never read this file.
+#
+# Derived, and therefore absent here: command path, operand, long option,
+# flag, operand order, exit codes 0, 1 and 2.
+
+@prefix cli:  <https://w3id.org/deed/cli#> .
+@prefix deed: <https://w3id.org/deed/ns#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/deed/cli> a owl:Ontology ;
+    rdfs:label "Deed CLI binding vocabulary" ;
+    owl:versionInfo "0.1.0-draft.1" .
+
+# ------------------------------------------------------- the root command
+
+cli:Tool a rdfs:Class ;
+    rdfs:label "Tool" ;
+    rdfs:comment "The one executable (decision 10). Its acts are every deed:Act in the same vocabulary." .
+
+cli:command a rdf:Property ;
+    rdfs:domain cli:Tool ; rdfs:range xsd:string ;
+    rdfs:comment "The root command's name. (varve)" .
+
+cli:defaultResource a rdf:Property ;
+    rdfs:domain cli:Tool ; rdfs:range deed:Resource ;
+    rdfs:comment "The resource whose name is left out of command paths. At most one. (Varve's dataset: create, load, query, update, export, checkpoint.) Pending Q2." .
+
+cli:defaultVerb a rdf:Property ;
+    rdfs:domain cli:Tool ; rdfs:range deed:Verb ;
+    rdfs:comment "The verb that is left out of command paths, so the resource name alone is the command. At most one. (Varve's show: info, feed, lease, storage.) Pending Q2." .
+
+# ------------------------------------------------------------- assignments
+
+cli:short a rdf:Property ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A one-character short name for a parameter's, setting's or CLI option's long option. Assigned, never derived (decision 7). (-q, -u, -f)" .
+
+cli:env a rdf:Property ;
+    rdfs:domain deed:Setting ; rdfs:range xsd:string ;
+    rdfs:comment "The environment variable read when the setting's option is absent. Assigned, not derived, because the names are a compatibility surface. (VARVE_TOKEN, VARVE_CLIENT_SECRET)" .
+
+cli:exitCode a rdf:Property ;
+    rdfs:domain deed:Failure ; rdfs:range xsd:integer ;
+    rdfs:comment "The exit code of a failure that is not 1. (setup apply: a setup file outside the subset exits 2.)" .
+
+# --------------------------------------------------------------- overrides
+# Each override is a place where a spelling departs from the rules. A tool
+# with no overrides is fully derived.
+
+cli:name a rdf:Property ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The token used on the CLI in place of deed:name. (status is spelled info; standby is spelled --server.)" .
+
+cli:bindAs a rdf:Property ;
+    rdfs:comment "Accepted 2026-11-15 (ADR 0002) for a target setting bound as an operand. Binds a parameter or setting against its rule: cli:Operand for a modifier or a setting, cli:Option for a subject. (Varve's dataset setting is an operand; its query text, a subject, is --query.)" .
+
+cli:Operand a cli:BindingKind .
+cli:Option  a cli:BindingKind .
+cli:BindingKind a rdfs:Class .
+
+cli:spelledAs a rdf:Property ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The command line an act (or host) actually has when no rule and no other override reaches it: its verb is a flag of another command, or its path is not resource path plus verb. Recorded so that the departure is data. A generator refuses it; it is here to be removed. (lease --break, apply --plan, manage move-events, serve --print-config)" .
+
+# ------------------------------------------------ inline text or a file
+
+cli:fileAlternative a rdf:Property ;
+    rdfs:domain deed:Parameter ; rdfs:range xsd:string ;
+    rdfs:comment "The long option that supplies a text parameter from a file instead of inline. Exactly one of the two is given. The act layer sees one parameter. (query --query | --file)" .
+
+# ------------------------------------------------------- CLI-only options
+
+cli:SurfaceOption a rdfs:Class ;
+    rdfs:label "CLI-only option" ;
+    rdfs:comment "An option that exists because the surface is a command line, and corresponds to nothing in the act: how an outcome is written, where it is saved, how it is signalled. It has a deed:name, a deed:datatype and optionally a cli:short." .
+
+cli:surfaceOption a rdf:Property ;
+    rdfs:domain deed:Act ; rdfs:range cli:SurfaceOption ;
+    rdfs:comment "A CLI-only option of this act's command. (--format on query and export)" .
+
+# ------------------------------------------------------------------- hosts
+# Accepted 2026-11-15 (ADR 0003): hosts are a CLI-layer kind, outside the act layer.
+
+cli:Host a rdfs:Class ;
+    rdfs:label "Host command" ;
+    rdfs:comment "A command that runs until stopped. It is not an act: it has no outcome and no enumerable failures, and no other surface can offer it. The generated MCP server is itself one. A host has a deed:name, takes contexts, and may name the acts it performs." .
+
+cli:performs a rdf:Property ;
+    rdfs:domain cli:Host ; rdfs:range deed:Act ;
+    rdfs:comment "An act the host performs on its own initiative while it runs. (watch-kubernetes performs writer takeover.)" .

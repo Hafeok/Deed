@@ -1,0 +1,344 @@
+# Deed: SHACL shapes for the act layer and the CLI binding layer.
+# Draft 1, 2026-11-15. Working draft.
+#
+# The shapes are the teaching instrument (decision 8). A message does not
+# say what is malformed; it names the design question the author has not yet
+# answered. Reading a validation report should be a design review.
+#
+# Severity: sh:Violation is a question that must be answered before anything
+# is generated. sh:Warning and sh:Info mark places where a CLI spelling
+# departs from the derivation rules: allowed, counted, and meant to shrink.
+#
+# Three shapes use SHACL-SPARQL (marked). Everything else is SHACL Core.
+
+@prefix cli:  <https://w3id.org/deed/cli#> .
+@prefix deed: <https://w3id.org/deed/ns#> .
+@prefix dsh:  <https://w3id.org/deed/shapes#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/deed/shapes> sh:declare
+    [ sh:prefix "deed" ; sh:namespace "https://w3id.org/deed/ns#"^^xsd:anyURI ] ,
+    [ sh:prefix "cli"  ; sh:namespace "https://w3id.org/deed/cli#"^^xsd:anyURI ] ,
+    [ sh:prefix "rdf"  ; sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] .
+
+# ================================================================ the act
+
+dsh:ActIdentity a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:resource ; sh:minCount 1 ; sh:maxCount 1 ; sh:class deed:Resource ;
+        sh:message "An act is about exactly one resource. What is this act done to? If the answer is two things, it is two acts; if the answer is 'the tool itself', name that as a resource." ] ;
+    sh:property [
+        sh:path deed:verb ; sh:minCount 1 ; sh:maxCount 1 ; sh:class deed:Verb ;
+        sh:message "An act has exactly one verb from the controlled list. What does this act do to its resource? If no listed verb fits, is the act really new, or is it an existing verb on a resource you have not named yet?" ] ;
+    sh:property [
+        sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "Say in one sentence what this act does, in words an actor would use. If the sentence needs 'and', consider two acts." ] .
+
+# ---------------------------------------------------------------- 1. actor
+
+dsh:ActActor a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:actor ; sh:minCount 1 ; sh:class deed:Actor ;
+        sh:message "Who may perform this act? Name a role, not a person, an application or a surface. If the honest answer is 'anyone who can reach it', that is a role too, and worth naming so that it can be withdrawn later." ] .
+
+# ---------------------------------------------------------------- 2. input
+
+dsh:ActInput a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:input ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What does the actor supply? List the parameters in order, or say deed:Nothing. An act with no input is fine; an act that has not said so is undecided." ] ;
+    sh:property [
+        sh:path deed:input ;
+        sh:or ( [ sh:in ( deed:Nothing ) ] [ sh:node dsh:NonEmptyList ] ) ;
+        sh:message "The input is an ordered list of parameters, or deed:Nothing. Order matters: it is the order an actor states the subjects in." ] ;
+    sh:property [
+        sh:path ( deed:input [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+        sh:class deed:Parameter ;
+        sh:message "Everything in an act's input is a parameter defined for the whole tool. Is this a new parameter, or one that already has a name elsewhere in the tool?" ] .
+
+dsh:NonEmptyList a sh:NodeShape ;
+    sh:property [ sh:path rdf:first ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+# -------------------------------------------------------------- 3. context
+
+dsh:ActContext a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:context ; sh:minCount 1 ;
+        sh:message "What does the environment supply? A target the act runs against, a credential, a policy: name each context, or say deed:Nothing. If the actor must repeat a value on every act of a session, it is context, not input." ] ;
+    sh:property [
+        sh:path deed:context ;
+        sh:or ( [ sh:class deed:Context ] [ sh:in ( deed:Nothing ) ] ) ;
+        sh:message "A context is declared once for the tool, with its settings and its failures. Is this a context the tool already has?" ] .
+
+dsh:ActContextNothingAlone a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:or ( [ sh:not [ sh:property [ sh:path deed:context ; sh:hasValue deed:Nothing ] ] ]
+            [ sh:property [ sh:path deed:context ; sh:maxCount 1 ] ] ) ;
+    sh:message "This act says it has no context and also names one. Which is it?" .
+
+# ---------------------------------------------------------------- 4. needs
+
+dsh:ActNeeds a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:needs ; sh:minCount 1 ;
+        sh:message "What existing state does this act read? Name each state, or say deed:Nothing. Whoever may perform the act will be allowed to read exactly this, so an act that reads more than it says is a leak and one that says more than it reads is over-privileged." ] ;
+    sh:property [
+        sh:path deed:needs ;
+        sh:or ( [ sh:class deed:State ] [ sh:in ( deed:Nothing ) ] ) ;
+        sh:message "What an act needs is a named state of the tool. Is this a state the tool already has, under another name?" ] .
+
+dsh:ActNeedsNothingAlone a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:or ( [ sh:not [ sh:property [ sh:path deed:needs ; sh:hasValue deed:Nothing ] ] ]
+            [ sh:property [ sh:path deed:needs ; sh:maxCount 1 ] ] ) ;
+    sh:message "This act says it reads nothing and also names a state it reads. Which is it?" .
+
+# -------------------------------------------------------------- 5. changes
+
+dsh:ActChanges a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:changes ; sh:minCount 1 ;
+        sh:message "What state does this act write? Name each change, or say deed:Nothing. This is what makes the act read-only or not on every surface: an agent will be told it is safe to call, a browser will be allowed to retry it. Is that true?" ] ;
+    sh:property [
+        sh:path deed:changes ;
+        sh:or ( [ sh:node dsh:Change ] [ sh:in ( deed:Nothing ) ] ) ;
+        sh:message "A change names one state and the manner it is written in: creates, appends, converges or removes. Which state, and what is left of what was there before?" ] .
+
+dsh:ActChangesNothingAlone a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:or ( [ sh:not [ sh:property [ sh:path deed:changes ; sh:hasValue deed:Nothing ] ] ]
+            [ sh:property [ sh:path deed:changes ; sh:maxCount 1 ] ] ) ;
+    sh:message "This act says it changes nothing and also names a change. Which is it?" .
+
+dsh:Change a sh:NodeShape ;
+    sh:property [ sh:path deed:state ; sh:minCount 1 ; sh:maxCount 1 ; sh:class deed:State ] ;
+    sh:property [ sh:path deed:manner ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( deed:Creates deed:Appends deed:Converges deed:Removes ) ] .
+
+# -------------------------------------------------------------- 6. outcome
+
+dsh:ActOutcome a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:outcome ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What does the actor get back when this act succeeds? Exactly one outcome: a single value or a stream. 'It prints some lines' is not an answer: what would a program do with it?" ] ;
+    sh:property [
+        sh:path deed:outcome ;
+        sh:or ( [ sh:class deed:Single ] [ sh:class deed:Stream ] ) ;
+        sh:message "Is the outcome complete when the act ends (deed:Single), or does it arrive piece by piece and possibly never end (deed:Stream)? A surface that cannot stream has to know which." ] ;
+    sh:property [
+        sh:path ( deed:outcome deed:yields ) ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What is the value the actor gets back, or each value of the stream? Name its kind. If it has no name, nobody downstream can depend on it." ] .
+
+# ------------------------------------------------------------- 7. failures
+
+dsh:ActFailures a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:property [
+        sh:path deed:failure ; sh:minCount 1 ;
+        sh:message "How can this act fail, beyond what its contexts already say? Name each failure, or say deed:Nothing. An unnamed failure reaches the actor as text they must parse." ] ;
+    sh:property [
+        sh:path deed:failure ;
+        sh:or ( [ sh:class deed:Failure ] [ sh:in ( deed:Nothing ) ] ) ;
+        sh:message "A failure is declared once for the tool, with a name and what the actor should do next. Is this one the tool already has?" ] .
+
+dsh:ActFailuresNothingAlone a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:or ( [ sh:not [ sh:property [ sh:path deed:failure ; sh:hasValue deed:Nothing ] ] ]
+            [ sh:property [ sh:path deed:failure ; sh:maxCount 1 ] ] ) ;
+    sh:message "This act says it cannot fail on its own account and also names a failure. Which is it?" .
+
+# SHACL-SPARQL: the message names the state.
+dsh:ActThatChangesCanFail a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:sparql [
+        sh:prefixes <https://w3id.org/deed/shapes> ;
+        sh:message "This act changes {?state} but declares no failure of its own. What happens when {?state} is not as the actor expects: already there, already held, moved on since they looked?" ;
+        sh:select """
+            SELECT $this ?state WHERE {
+                $this deed:changes ?change .
+                ?change deed:state ?state .
+                $this deed:failure deed:Nothing .
+            }""" ] .
+
+# SHACL-SPARQL: two acts must not be the same act.
+dsh:ActIsUnique a sh:NodeShape ;
+    sh:targetClass deed:Act ;
+    sh:sparql [
+        sh:prefixes <https://w3id.org/deed/shapes> ;
+        sh:message "This act and {?other} have the same resource and the same verb. Are they one act with a parameter, or is one of them about a resource that has not been named?" ;
+        sh:select """
+            SELECT $this ?other WHERE {
+                $this deed:resource ?r ; deed:verb ?v .
+                ?other deed:resource ?r ; deed:verb ?v .
+                FILTER (?other != $this)
+            }""" ] .
+
+# ===================================================== the things acts use
+
+dsh:Resource a sh:NodeShape ;
+    sh:targetClass deed:Resource ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ;
+        sh:message "A resource has one name: a singular noun, lower case, hyphenated. What do the people who operate this tool call the thing?" ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What is this resource, in one sentence? If it cannot be told apart from another resource, it may be a state of that one." ] ;
+    sh:property [ sh:path deed:within ; sh:maxCount 1 ; sh:class deed:Resource ;
+        sh:message "A resource is part of at most one other. If it seems to belong to two, which one would it not exist without?" ] .
+
+dsh:Verb a sh:NodeShape ;
+    sh:targetClass deed:Verb ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ;
+        sh:message "A verb has one name: a single verb in the imperative, lower case. If the name contains a noun (move-events, watch-kubernetes), the noun is a resource: what is it?" ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What does this verb mean on any resource? If the meaning changes with the resource, it is two verbs." ] .
+
+dsh:Actor a sh:NodeShape ;
+    sh:targetClass deed:Actor ;
+    sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What is this role called by the people who grant it?" ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What makes someone this actor: a grant, a credential, access to a place? If the answer names a person or a program, it is an identity, not a role." ] .
+
+dsh:Parameter a sh:NodeShape ;
+    sh:targetClass deed:Parameter ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ;
+        sh:message "A parameter has one name, lower case, hyphenated, and the name means this one thing in every act of the tool. What is it called?" ] ;
+    sh:property [ sh:path deed:role ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( deed:Subject deed:Modifier ) ;
+        sh:message "Is this parameter what the act is performed on (subject), or how it is performed (modifier)? Test: take it away. If the act has nothing left to do, it is a subject." ] ;
+    sh:property [ sh:path deed:datatype ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What kind of value is this? If it is the content of a file, say deed:Document rather than a path: only one surface has paths." ] ;
+    sh:property [ sh:path deed:required ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ;
+        sh:message "Can the act proceed without this parameter? Say true or false. If it is required only when another parameter is given, there are probably two acts here." ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What does the actor put here, and what happens when they leave it out? This sentence is the help text on every surface." ] .
+
+dsh:SubjectIsNotAFlag a sh:NodeShape ;
+    sh:targetClass deed:Parameter ;
+    sh:not [ sh:and ( [ sh:property [ sh:path deed:role ; sh:hasValue deed:Subject ] ]
+                      [ sh:property [ sh:path deed:datatype ; sh:hasValue xsd:boolean ] ] ) ] ;
+    sh:message "A yes-or-no value says how an act is done, never what it is done to. Is this a modifier, or is 'yes' really a different act?" .
+
+dsh:FlagIsNotRequired a sh:NodeShape ;
+    sh:targetClass deed:Parameter ;
+    sh:not [ sh:and ( [ sh:property [ sh:path deed:required ; sh:hasValue true ] ]
+                      [ sh:property [ sh:path deed:datatype ; sh:hasValue xsd:boolean ] ] ) ] ;
+    sh:message "A required yes-or-no has only one useful value. What is the actor confirming? If it is that they have seen the current state, ask for that state instead." .
+
+# SHACL-SPARQL: a name means one thing.
+dsh:NameMeansOneThing a sh:NodeShape ;
+    sh:targetClass deed:Parameter , deed:Setting ;
+    sh:sparql [
+        sh:prefixes <https://w3id.org/deed/shapes> ;
+        sh:message "'{?name}' is also the name of {?other}. A name means one thing across the tool. Are these the same parameter, or does one of them need a more exact name?" ;
+        sh:select """
+            SELECT $this ?other ?name WHERE {
+                $this deed:name ?name .
+                ?other deed:name ?name .
+                { ?other a deed:Parameter } UNION { ?other a deed:Setting }
+                FILTER (?other != $this)
+            }""" ] .
+
+dsh:Context a sh:NodeShape ;
+    sh:targetClass deed:Context ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What does this context stand for, and for how long is it fixed: a session, a deployment?" ] ;
+    sh:property [ sh:path deed:setting ; sh:minCount 1 ; sh:class deed:Setting ;
+        sh:message "What must the environment supply for this context to exist? A context with no settings is not supplied by anything." ] ;
+    sh:property [ sh:path deed:failure ; sh:minCount 1 ;
+        sh:or ( [ sh:class deed:Failure ] [ sh:in ( deed:Nothing ) ] ) ;
+        sh:message "How does this context fail every act that uses it: unreachable, refused, held by another? Name each, or say deed:Nothing. Stating it here keeps it out of every act." ] .
+
+dsh:Setting a sh:NodeShape ;
+    sh:targetClass deed:Setting ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ;
+        sh:message "A setting has one name, lower case, hyphenated. What is it called in configuration?" ] ;
+    sh:property [ sh:path deed:datatype ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "What kind of value does the environment supply here?" ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What is this setting, and what happens when the environment does not supply it?" ] .
+
+dsh:State a sh:NodeShape ;
+    sh:targetClass deed:State ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What is this state, and who may read it and who may write it? If the answer is the same as for another state, they may be one." ] .
+
+dsh:Failure a sh:NodeShape ;
+    sh:targetClass deed:Failure ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+        sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ;
+        sh:message "A failure has one name that a program can match on, lower case, hyphenated. Name what went wrong, not where it was noticed." ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What should the actor do next when this happens: retry, look again, fix the input, ask someone? A failure that does not say is only an error message." ] .
+
+# ================================================================= the CLI
+
+dsh:Tool a sh:NodeShape ;
+    sh:targetClass cli:Tool ;
+    sh:property [ sh:path cli:command ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z][a-z0-9-]*$" ;
+        sh:message "What does the user type to run this tool? One lower-case word." ] ;
+    sh:property [ sh:path cli:defaultResource ; sh:maxCount 1 ; sh:class deed:Resource ;
+        sh:message "Only one resource can go unnamed on the command line. Which one is the tool about?" ] ;
+    sh:property [ sh:path cli:defaultVerb ; sh:maxCount 1 ; sh:class deed:Verb ;
+        sh:message "Only one verb can go unsaid on the command line. Which is what a user means by naming a resource and nothing else?" ] .
+
+dsh:Short a sh:NodeShape ;
+    sh:targetSubjectsOf cli:short ;
+    sh:property [ sh:path cli:short ; sh:maxCount 1 ; sh:pattern "^[A-Za-z0-9]$" ;
+        sh:message "A short name is one letter or digit, and a tool has few. Is this option typed often enough to spend one on?" ] .
+
+dsh:Env a sh:NodeShape ;
+    sh:targetSubjectsOf cli:env ;
+    sh:class deed:Setting ;
+    sh:message "Only a setting has an environment variable: the environment supplies context, never input. If a parameter seems to want one, is it context?" ;
+    sh:property [ sh:path cli:env ; sh:maxCount 1 ; sh:pattern "^[A-Z][A-Z0-9_]*$" ;
+        sh:message "An environment variable is upper case with underscores, and only a setting has one: the environment supplies context, never input. If a parameter seems to want one, is it context?" ] .
+
+dsh:ExitCode a sh:NodeShape ;
+    sh:targetSubjectsOf cli:exitCode ;
+    sh:class deed:Failure ;
+    sh:message "Only a failure has an exit code of its own. If success needs to signal something by exit code, what is it that the outcome does not already say?" ;
+    sh:property [ sh:path cli:exitCode ; sh:maxCount 1 ; sh:minInclusive 2 ; sh:maxInclusive 125 ;
+        sh:message "A failure exits 1 unless it says otherwise, and 0 is success. What does a script do differently on this code that it could not do on 1?" ] .
+
+dsh:BindAs a sh:NodeShape ;
+    sh:targetSubjectsOf cli:bindAs ;
+    sh:property [ sh:path cli:bindAs ; sh:maxCount 1 ; sh:in ( cli:Operand cli:Option ) ] ;
+    sh:property [ sh:path cli:bindAs ; sh:maxCount 0 ; sh:severity sh:Info ;
+        sh:message "This is bound against its rule: a subject as an option, or a modifier or setting as an operand. Does the rule give a worse command line, or is the role wrong in the act layer?" ] .
+
+dsh:CliName a sh:NodeShape ;
+    sh:targetSubjectsOf cli:name ;
+    sh:property [ sh:path cli:name ; sh:maxCount 0 ; sh:severity sh:Info ;
+        sh:message "This is spelled differently on the command line than everywhere else. Which of the two names is the right one?" ] .
+
+dsh:SpelledAs a sh:NodeShape ;
+    sh:targetSubjectsOf cli:spelledAs ;
+    sh:property [ sh:path cli:spelledAs ; sh:maxCount 0 ; sh:severity sh:Warning ;
+        sh:message "This act's command line is recorded, not derived: no resource path and verb spell it. Nothing can be generated for it. What would it be called as a command of its own?" ] .
+
+dsh:SurfaceOption a sh:NodeShape ;
+    sh:targetClass cli:SurfaceOption ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:property [ sh:path deed:datatype ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "Why does only the command line need this option? If an agent or an HTTP client would want it too, it is a parameter of the act." ] .
+
+dsh:Host a sh:NodeShape ;
+    sh:targetClass cli:Host ;
+    sh:property [ sh:path deed:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:property [ sh:path rdfs:comment ; sh:minCount 1 ;
+        sh:message "What does this command do until it is stopped? If it ever returns something on success, the part that returns is an act." ] ;
+    sh:property [ sh:path cli:performs ; sh:class deed:Act ] .
