@@ -62,7 +62,10 @@ def run(mapfile,out):
         rec=g.value(a,C.spelledAs)
         command='' if rec else ' '.join([cmd]+path)
         if command: paths[command]+=1
-        rows.append((str(a),command,' '.join(ops) if not rec else '',' '.join(sorted(set(opts))),' '.join(sorted(set(flags))),str(ro).lower(),str(de).lower(),str(idem).lower(),' '.join(sorted(set(codes))),'recorded spelling: '+str(rec) if rec else ''))
+        # An act with cli:spelledAs has no command, so nothing of a command line: no operands,
+        # options, flags or exit codes. Its hints stay: they belong to the act, not the CLI.
+        if rec: ops=[];opts=[];flags=[];codes=[]
+        rows.append((str(a),command,' '.join(ops),' '.join(sorted(set(opts))),' '.join(sorted(set(flags))),str(ro).lower(),str(de).lower(),str(idem).lower(),' '.join(sorted(set(codes))),'recorded spelling: '+str(rec) if rec else ''))
     dup=[p for p,n in paths.items() if n>1]; assert not dup,dup
     open(f'{root}/{out}','w').write('act\tcommand\toperands\toptions\tflags\tread-only\tdestructive\tidempotent\texit-codes\tnote\n'+''.join('\t'.join(r)+'\n' for r in rows))
     print(out,len(rows),'acts',sum(1 for r in rows if r[1]),'commands')

@@ -8,8 +8,8 @@ namespace Deed.Tests;
 
 /// <summary>
 /// The model against the reference tables in <c>tests/fixtures/*.commands.tsv</c>, which
-/// <c>tests/reference/commands.py</c> derived from the same rules. A row that differs is a rule read
-/// two ways: it is a finding, listed in <see cref="KnownDifferences"/> with its cause, not made to pass.
+/// <c>tests/reference/commands.py</c> derives from the same rules. A row that differs is a rule read
+/// two ways: a finding to report, never something to make pass by editing the table or the test.
 /// </summary>
 public sealed class ModelTests
 {
@@ -22,62 +22,23 @@ public sealed class ModelTests
     private static readonly string[] Columns =
         ["act", "command", "operands", "options", "flags", "read-only", "destructive", "idempotent", "exit-codes", "note"];
 
-    /// <summary>
-    /// Every cell where the model and a reference table differ: fixture, act, column, table value, model value.
-    /// Cause, for all of them: issue #43 rule 2 gives an act with <c>cli:spelledAs</c> no CLI command, so the
-    /// model has no options or flags for it; <c>commands.py</c> blanks the command and the operands of such an
-    /// act and still lists the options and flags its contexts, input and surface options would derive.
-    /// </summary>
-    private static readonly string[] KnownDifferences =
-    [
-        "product-cli ListFormats: none",
-        "varve ApplyDeclarations options: '--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --out --scope --server --token(VARVE_TOKEN)' in the table, '' in the model",
-        "varve ApplyPlan options: '--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --scope --server --token(VARVE_TOKEN)' in the table, '' in the model",
-        "varve BreakLease options: '--endpoint --region --sts-endpoint' in the table, '' in the model",
-        "varve MoveEventDeclarations options: '--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --scope --server --token(VARVE_TOKEN)' in the table, '' in the model",
-        "varve PlanDeclarations flags: '--exit-code' in the table, '' in the model",
-        "varve PlanDeclarations options: '--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --out --scope --server --token(VARVE_TOKEN)' in the table, '' in the model",
-        "varve ShowConfiguration flags: '--anonymous --record-bootstrap' in the table, '' in the model",
-        "varve ShowConfiguration options: '--audience* --auth-mode --authority --config* --datasets-root --set* --urls' in the table, '' in the model",
-        "varve TakeOverLease options: '--endpoint --epoch --region --sts-endpoint' in the table, '' in the model",
-        "varve TakeOverWriter flags: '--managed-identity' in the table, '' in the model",
-        "varve TakeOverWriter options: '--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --from --scope --server* --token(VARVE_TOKEN)' in the table, '' in the model",
-    ];
-
     /// <summary>Loaded once: the library registers a schema by its $id and refuses to register it twice.</summary>
     private static readonly Lazy<JsonSchema> Schema = new(() => JsonSchema.FromText(File.ReadAllText(Repository.File("docs/model.schema.json"))));
 
     private static DeedModel Derive(string map) => ModelDeriver.Derive(ActMapSet.ReadFiles([Repository.File(map)]));
 
-    [Fact]
-    public void Rows_match_the_reference_tables_except_the_known_differences()
+    [Theory]
+    [MemberData(nameof(Maps))]
+    public void Rows_match_the_reference_table(string map, string fixture)
     {
-        List<string> differences = [];
-        foreach ((string map, string fixture) in new[] { ("maps/varve/varve-acts.ttl", "varve"), ("maps/product-cli/product-acts.ttl", "product-cli") })
-        {
-            DeedModel model = Derive(map);
-            string[] lines = File.ReadAllLines(Repository.File($"tests/fixtures/{fixture}.commands.tsv"));
-            Assert.Equal(string.Join('\t', Columns), lines[0]);
+        string[] lines = File.ReadAllLines(Repository.File($"tests/fixtures/{fixture}.commands.tsv"));
+        Assert.Equal(string.Join('\t', Columns), lines[0]);
 
-            Dictionary<string, string[]> table = lines.Skip(1).Where(l => l.Length > 0).Select(l => l.Split('\t')).ToDictionary(f => f[0]);
-            Assert.Equal(table.Keys.Order(StringComparer.Ordinal), model.Acts.Select(a => a.Iri).Order(StringComparer.Ordinal));
+        List<string> expected = [.. lines.Skip(1).Where(l => l.Length > 0)];
+        List<string> actual = [.. Derive(map).Acts.Select(a => string.Join('\t', Row(a)))];
 
-            foreach (ActModel act in model.Acts)
-            {
-                string[] expected = table[act.Iri];
-                string[] actual = Row(act);
-                for (int c = 1; c < Columns.Length; c++)
-                {
-                    if (expected[c] != actual[c])
-                    {
-                        differences.Add($"{fixture} {Local(act.Iri)} {Columns[c]}: '{expected[c]}' in the table, '{actual[c]}' in the model");
-                    }
-                }
-            }
-        }
-
-        differences.Sort(StringComparer.Ordinal);
-        Assert.Equal(KnownDifferences.Where(d => !d.EndsWith(": none", StringComparison.Ordinal)), differences);
+        // Acts are in IRI order in both. One row per line, so a failure names the act that differs.
+        Assert.Equal(expected, actual);
     }
 
     [Theory]
@@ -149,7 +110,10 @@ public sealed class ModelTests
 
     // ----------------------------------------------------------- the table's notation
 
-    /// <summary>One row in the notation of <c>commands.tsv</c>.</summary>
+    /// <summary>
+    /// One row in the notation of <c>commands.tsv</c>. An act without a command has nothing of a command
+    /// line: no operands, options, flags or exit codes. Its hints and its recorded spelling remain.
+    /// </summary>
     private static string[] Row(ActModel act)
     {
         CliCommand? c = act.Cli.Command;
@@ -164,7 +128,7 @@ public sealed class ModelTests
             Bool(act.Hints.ReadOnly),
             Bool(act.Hints.Destructive),
             Bool(act.Hints.Idempotent),
-            string.Join(' ', act.Failures.Where(f => f.ExitCode != 1).Select(f => $"{f.Name}={f.ExitCode}").Distinct().Order(StringComparer.Ordinal)),
+            c is null ? "" : string.Join(' ', act.Failures.Where(f => f.ExitCode != 1).Select(f => $"{f.Name}={f.ExitCode}").Distinct().Order(StringComparer.Ordinal)),
             act.Cli.SpelledAs is { } s ? "recorded spelling: " + s : "",
         ];
     }
@@ -189,6 +153,4 @@ public sealed class ModelTests
         if (repeatable) s.Append('*');
         return s.ToString();
     }
-
-    private static string Local(string iri) => iri[(iri.LastIndexOf('#') + 1)..];
 }
