@@ -72,7 +72,7 @@ Writing each act forced an answer for every facet. Where the definition gave non
 - **#5 ordering and elision.** Resource then verb holds for all 30 specified paths. One default resource; no default verb. Per-resource elision was not needed.
 - **#6 verbs.** 14 verbs: `init`, `create`, `show`, `list`, `remove`, `validate`, `export`, `derive`, `simulate`, `run`, `answer`, `diff`, `adopt`, `reject`. Shared with Varve: `create`, `show`, `list`, `export`. `apply` is not used; `remove` and `validate` are. `new` is not a verb, and it is this application's consistent spelling of `create`.
 - **#7 actors.** Three roles, none Varve's: author, agent, realiser. Supports shipping no actors. Contradicts "no term for confirmation or on-behalf-of" (P1): the agent's record is `by` the agent and `attributedTo` the author.
-- **#8 streams.** 14 stream outcomes, all finite. Nothing new.
+- **#8 streams.** 18 stream outcomes, all finite. Nothing new.
 - **#20 operand-bound settings.** Not used: the target is an option.
 - **#21 hosts.** Three, including a declared `mcp` with its own option (`--http`), so the generated MCP host must be declarable, not only implied.
 
