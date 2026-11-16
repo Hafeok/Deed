@@ -10,6 +10,7 @@ public sealed class OracleTests
         { "maps/varve/varve-acts.ttl", "varve", 0, 10, 8 },
         { "maps/product-cli/product-acts.ttl", "product-cli", 0, 2, 4 },
         { "tests/fixtures/broken.ttl", "broken", 22, 0, 0 },
+        { "tests/fixtures/broken-terms.ttl", "broken-terms", 47, 0, 0 },
     };
 
     [Theory]

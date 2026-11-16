@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/deed/model/1/schema.json",
+  "title": "Deed model file, version 1",
+  "description": "What `deed model` writes: the resolved act maps of one tool and every derived surface. Described in docs/model.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["deedModel", "tool", "acts", "hosts"],
+  "properties": {
+    "deedModel": { "const": 1 },
+    "tool": { "$ref": "#/$defs/tool" },
+    "acts": { "type": "array", "items": { "$ref": "#/$defs/act" } },
+    "hosts": { "type": "array", "items": { "$ref": "#/$defs/host" } }
+  },
+  "$defs": {
+    "iri": { "type": "string", "minLength": 1 },
+    "text": { "type": ["string", "null"] },
+    "name": { "type": "string", "minLength": 1 },
+    "iris": { "type": "array", "items": { "$ref": "#/$defs/iri" } },
+
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iri", "command", "defaultResource", "defaultVerb"],
+      "properties": {
+        "iri": { "$ref": "#/$defs/iri" },
+        "command": { "$ref": "#/$defs/name" },
+        "defaultResource": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/named" }] },
+        "defaultVerb": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/named" }] }
+      }
+    },
+
+    "named": {
+      "description": "A resource or a verb.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iri", "name", "cliName", "comment"],
+      "properties": {
+        "iri": { "$ref": "#/$defs/iri" },
+        "name": { "$ref": "#/$defs/name" },
+        "cliName": { "type": ["string", "null"] },
+        "comment": { "$ref": "#/$defs/text" }
+      }
+    },
+
+    "act": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iri", "comment", "resourcePath", "verb", "actors", "input", "contexts", "needs", "changes", "outcome", "failures", "hints", "cli"],
+      "properties": {
+        "iri": { "$ref": "#/$defs/iri" },
+        "comment": { "$ref": "#/$defs/text" },
+        "resourcePath": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/named" } },
+        "verb": { "$ref": "#/$defs/named" },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["iri", "label", "comment"],
+            "properties": {
+              "iri": { "$ref": "#/$defs/iri" },
+              "label": { "$ref": "#/$defs/text" },
+              "comment": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "input": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["iri", "name", "role", "datatype", "required", "repeatable", "comment"],
+            "properties": {
+              "iri": { "$ref": "#/$defs/iri" },
+              "name": { "$ref": "#/$defs/name" },
+              "role": { "enum": ["subject", "modifier"] },
+              "datatype": { "$ref": "#/$defs/iri" },
+              "required": { "type": "boolean" },
+              "repeatable": { "type": "boolean" },
+              "comment": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "contexts": { "type": "array", "items": { "$ref": "#/$defs/context" } },
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["iri", "comment"],
+            "properties": {
+              "iri": { "$ref": "#/$defs/iri" },
+              "comment": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "manner"],
+            "properties": {
+              "state": { "$ref": "#/$defs/iri" },
+              "manner": { "enum": ["creates", "appends", "converges", "removes"] }
+            }
+          }
+        },
+        "outcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "yields"],
+          "properties": {
+            "kind": { "enum": ["single", "stream"] },
+            "yields": { "$ref": "#/$defs/iri" }
+          }
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["iri", "name", "comment", "exitCode", "own", "contexts"],
+            "properties": {
+              "iri": { "$ref": "#/$defs/iri" },
+              "name": { "$ref": "#/$defs/name" },
+              "comment": { "$ref": "#/$defs/text" },
+              "exitCode": { "type": "integer", "minimum": 1, "maximum": 255 },
+              "own": { "type": "boolean" },
+              "contexts": { "$ref": "#/$defs/iris" }
+            }
+          }
+        },
+        "hints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["readOnly", "destructive", "idempotent"],
+          "properties": {
+            "readOnly": { "type": "boolean" },
+            "destructive": { "type": "boolean" },
+            "idempotent": { "type": "boolean" }
+          }
+        },
+        "cli": {
+          "oneOf": [
+            {
+              "description": "A derived command.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["command", "spelledAs"],
+              "properties": {
+                "command": { "$ref": "#/$defs/command" },
+                "spelledAs": { "type": "null" }
+              }
+            },
+            {
+              "description": "No command: the act records a spelling that cannot be derived (cli:spelledAs).",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["command", "spelledAs"],
+              "properties": {
+                "command": { "type": "null" },
+                "spelledAs": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iri", "comment", "settings", "failures"],
+      "properties": {
+        "iri": { "$ref": "#/$defs/iri" },
+        "comment": { "$ref": "#/$defs/text" },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["iri", "name", "datatype", "repeatable", "comment"],
+            "properties": {
+              "iri": { "$ref": "#/$defs/iri" },
+              "name": { "$ref": "#/$defs/name" },
+              "datatype": { "$ref": "#/$defs/iri" },
+              "repeatable": { "type": "boolean" },
+              "comment": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "failures": { "$ref": "#/$defs/iris" }
+      }
+    },
+
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "path", "operands", "options", "flags"],
+      "properties": {
+        "line": { "$ref": "#/$defs/name" },
+        "path": { "type": "array", "items": { "$ref": "#/$defs/name" } },
+        "operands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "datatype", "required", "repeatable", "comment", "source"],
+            "properties": {
+              "name": { "$ref": "#/$defs/name" },
+              "datatype": { "$ref": "#/$defs/iri" },
+              "required": { "type": "boolean" },
+              "repeatable": { "type": "boolean" },
+              "comment": { "$ref": "#/$defs/text" },
+              "source": { "$ref": "#/$defs/source" }
+            }
+          }
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["long", "short", "env", "datatype", "required", "repeatable", "alternativeTo", "comment", "source"],
+            "properties": {
+              "long": { "$ref": "#/$defs/name" },
+              "short": { "type": ["string", "null"] },
+              "env": { "type": ["string", "null"] },
+              "datatype": { "$ref": "#/$defs/iri" },
+              "required": { "type": "boolean" },
+              "repeatable": { "type": "boolean" },
+              "alternativeTo": { "type": ["string", "null"] },
+              "comment": { "$ref": "#/$defs/text" },
+              "source": { "$ref": "#/$defs/source" }
+            }
+          }
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["long", "short", "env", "comment", "source"],
+            "properties": {
+              "long": { "$ref": "#/$defs/name" },
+              "short": { "type": ["string", "null"] },
+              "env": { "type": ["string", "null"] },
+              "comment": { "$ref": "#/$defs/text" },
+              "source": { "$ref": "#/$defs/source" }
+            }
+          }
+        }
+      }
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "iri"],
+      "properties": {
+        "kind": { "enum": ["parameter", "setting", "surfaceOption", "fileAlternative"] },
+        "iri": { "$ref": "#/$defs/iri" }
+      }
+    },
+
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iri", "name", "comment", "contexts", "performs", "spelledAs"],
+      "properties": {
+        "iri": { "$ref": "#/$defs/iri" },
+        "name": { "$ref": "#/$defs/name" },
+        "comment": { "$ref": "#/$defs/text" },
+        "contexts": { "type": "array", "items": { "$ref": "#/$defs/context" } },
+        "performs": { "$ref": "#/$defs/iris" },
+        "spelledAs": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

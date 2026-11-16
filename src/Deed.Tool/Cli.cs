@@ -1,32 +1,38 @@
 using Deed.Vocabulary;
+using Deed.Vocabulary.Model;
 
 namespace Deed.Tool;
 
 /// <summary>
-/// The command line, hand-written for this slice. It will be generated from an act map of
-/// Deed itself once Deed can generate; until then it knows <c>validate</c> and nothing else.
+/// The command line, hand-written until Deed can generate its own. Exit codes follow ADR 0020:
+/// 0 success, 1 a map with violations or one that cannot be derived, 2 anything that prevents
+/// validating (a usage error, a file that cannot be read or does not parse, an engine that refuses the shapes).
 /// </summary>
 internal static class Cli
 {
-    public const int NoViolation = 0;
-    public const int Violation = 1;
+    public const int Success = 0;
+    public const int Refused = 1;
     public const int UsageError = 2;
-    public const int EngineRefused = 3;
 
     private const string Usage = """
         Usage: deed validate <map.ttl>...
+               deed model <map.ttl>... [--output <file>]
 
-        Validates act maps against Deed's shapes and prints the report.
+        validate  Validates act maps against Deed's shapes and prints the report.
+        model     Validates act maps, derives the surfaces and writes the model file
+                  (JSON, docs/model.md) to standard output or to --output.
+
         The data graph is Deed's vocabulary, its CLI vocabulary and the maps given.
+        Printed IRIs are shortened with the prefixes the maps declare.
 
         Exit codes:
-          0  no violation (warnings and infos do not fail)
-          1  at least one violation
-          2  usage error, or a file that cannot be read or does not parse
-          3  the SHACL engine refused to run the shapes
+          0  no violation (warnings and infos do not fail); for model, the model was written
+          1  at least one violation, or the maps cannot be derived; no model is written
+          2  usage error, a file that cannot be read or does not parse,
+             or a SHACL engine that refuses to run the shapes
         """;
 
-    public static int Run(IReadOnlyList<string> args, TextWriter output, TextWriter error)
+    public static int Run(IReadOnlyList<string> args, TextWriter output, TextWriter error, Func<Stream>? stdout = null)
     {
         if (args.Count == 0)
         {
@@ -36,18 +42,21 @@ internal static class Cli
         if (IsHelp(args[0]))
         {
             output.WriteLine(Usage);
-            return NoViolation;
+            return Success;
         }
 
-        if (args[0] != "validate")
+        string command = args[0];
+        if (command is not ("validate" or "model"))
         {
-            return Fail(error, $"unknown command '{args[0]}'.");
+            return Fail(error, $"unknown command '{command}'.");
         }
 
         List<string> files = [];
+        string? outputFile = null;
         bool optionsEnded = false;
-        foreach (string arg in args.Skip(1))
+        for (int i = 1; i < args.Count; i++)
         {
+            string arg = args[i];
             if (!optionsEnded && arg == "--")
             {
                 optionsEnded = true;
@@ -55,7 +64,33 @@ internal static class Cli
             else if (!optionsEnded && IsHelp(arg))
             {
                 output.WriteLine(Usage);
-                return NoViolation;
+                return Success;
+            }
+            else if (!optionsEnded && command == "model" && (arg == "--output" || arg.StartsWith("--output=", StringComparison.Ordinal)))
+            {
+                if (outputFile is not null)
+                {
+                    return Fail(error, "--output is given twice.");
+                }
+
+                if (arg == "--output")
+                {
+                    if (i + 1 >= args.Count)
+                    {
+                        return Fail(error, "--output needs a file.");
+                    }
+
+                    outputFile = args[++i];
+                }
+                else
+                {
+                    outputFile = arg["--output=".Length..];
+                }
+
+                if (outputFile.Length == 0)
+                {
+                    return Fail(error, "--output needs a file.");
+                }
             }
             else if (!optionsEnded && arg.StartsWith('-') && arg.Length > 1)
             {
@@ -69,15 +104,15 @@ internal static class Cli
 
         if (files.Count == 0)
         {
-            return Fail(error, "validate needs at least one act map.");
+            return Fail(error, $"{command} needs at least one act map.");
         }
 
-        List<TurtleDocument> maps = [];
+        List<TurtleDocument> documents = [];
         foreach (string file in files)
         {
             try
             {
-                maps.Add(TurtleDocument.FromFile(file));
+                documents.Add(TurtleDocument.FromFile(file));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
@@ -86,9 +121,11 @@ internal static class Cli
             }
         }
 
+        ActMapSet maps;
         ValidationReport report;
         try
         {
+            maps = ActMapSet.Read(documents);
             report = ActMapValidator.Validate(maps);
         }
         catch (TurtleSyntaxException e)
@@ -99,11 +136,60 @@ internal static class Cli
         catch (ValidationRefusedException e)
         {
             error.WriteLine($"deed: {e.Message}");
-            return EngineRefused;
+            return UsageError;
         }
 
-        ReportWriter.Write(report, output);
-        return report.HasNoViolation ? NoViolation : Violation;
+        if (command == "validate")
+        {
+            ReportWriter.Write(report, maps, output);
+            return report.HasNoViolation ? Success : Refused;
+        }
+
+        // model: the report goes to standard error, since standard output may be the model.
+        if (!report.HasNoViolation)
+        {
+            ReportWriter.Write(report, maps, error);
+            error.WriteLine("deed: the maps have violations; no model is written.");
+            return Refused;
+        }
+
+        DeedModel model;
+        try
+        {
+            model = ModelDeriver.Derive(maps);
+        }
+        catch (DerivationException e)
+        {
+            foreach (DerivationError refusal in e.Errors)
+            {
+                error.WriteLine($"deed: cannot derive: {maps.Shorten(refusal.Message)}");
+            }
+
+            error.WriteLine("deed: no model is written.");
+            return Refused;
+        }
+
+        byte[] json = ModelWriter.ToUtf8(model);
+        if (outputFile is null)
+        {
+            output.Flush();
+            using Stream stream = (stdout ?? Console.OpenStandardOutput)();
+            stream.Write(json);
+            stream.Flush();
+            return Success;
+        }
+
+        try
+        {
+            File.WriteAllBytes(outputFile, json);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            error.WriteLine($"deed: {outputFile}: cannot be written: {e.Message}");
+            return UsageError;
+        }
+
+        return Success;
     }
 
     private static bool IsHelp(string arg) => arg is "-h" or "--help" or "help";

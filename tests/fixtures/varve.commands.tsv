@@ -1,8 +1,8 @@
 act	command	operands	options	flags	read-only	destructive	idempotent	exit-codes	note
-https://w3id.org/varve/acts#ApplyDeclarations			--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --out --scope --server --token(VARVE_TOKEN)		false	true	true		recorded spelling: apply <files...>
-https://w3id.org/varve/acts#ApplyPlan			--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --scope --server --token(VARVE_TOKEN)		false	true	true		recorded spelling: apply --from-plan <file>
+https://w3id.org/varve/acts#ApplyDeclarations					false	true	true		recorded spelling: apply <files...>
+https://w3id.org/varve/acts#ApplyPlan					false	true	true		recorded spelling: apply --from-plan <file>
 https://w3id.org/varve/acts#ApplySetup	varve setup apply	dataset setup	--allow-endpoint* --allow-source* --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --region --scope --sts-endpoint --token(VARVE_TOKEN)	--allow-private-addresses --no-store --unannounced	false	true	true	setup-outside-subset=2	
-https://w3id.org/varve/acts#BreakLease			--endpoint --region --sts-endpoint		false	true	true		recorded spelling: lease <dataset> --break
+https://w3id.org/varve/acts#BreakLease					false	true	true		recorded spelling: lease <dataset> --break
 https://w3id.org/varve/acts#CheckpointDataset	varve checkpoint	dataset	--allow-endpoint* --allow-source* --at --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --region --scope --sts-endpoint --token(VARVE_TOKEN)	--allow-private-addresses --no-store --unannounced	false	false	false		
 https://w3id.org/varve/acts#ConvertConfiguration					true	false	true		recorded spelling: apply --from-config <file>
 https://w3id.org/varve/acts#CreateDataset	varve create	directory			false	false	false		
@@ -10,14 +10,14 @@ https://w3id.org/varve/acts#ExportDataset	varve export	dataset	--allow-endpoint*
 https://w3id.org/varve/acts#ForgetReader	varve storage readers forget	dataset	--endpoint --newest --oldest --reader --region --sts-endpoint		false	true	true		
 https://w3id.org/varve/acts#ListReaders	varve storage readers list	dataset	--endpoint --region --sts-endpoint		true	false	true		
 https://w3id.org/varve/acts#LoadDataset	varve load	dataset files...	--graph --memory --workers		false	false	false		
-https://w3id.org/varve/acts#MoveEventDeclarations			--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --scope --server --token(VARVE_TOKEN)		false	true	true		recorded spelling: manage move-events <dataset>
-https://w3id.org/varve/acts#PlanDeclarations			--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --out --scope --server --token(VARVE_TOKEN)	--exit-code	true	false	true		recorded spelling: apply <files...> --plan
+https://w3id.org/varve/acts#MoveEventDeclarations					false	true	true		recorded spelling: manage move-events <dataset>
+https://w3id.org/varve/acts#PlanDeclarations					true	false	true		recorded spelling: apply <files...> --plan
 https://w3id.org/varve/acts#QueryDataset	varve query	dataset	--allow-endpoint* --allow-source* --as-of --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --entailment --file --format|-f --query|-q --region --scope --sts-endpoint --token(VARVE_TOKEN)	--allow-private-addresses --no-store --unannounced	true	false	true		
-https://w3id.org/varve/acts#ShowConfiguration			--audience* --auth-mode --authority --config* --datasets-root --set* --urls	--anonymous --record-bootstrap	true	false	true	configuration-invalid=2	recorded spelling: serve --print-config
+https://w3id.org/varve/acts#ShowConfiguration					true	false	true		recorded spelling: serve --print-config
 https://w3id.org/varve/acts#ShowFeed	varve feed	dataset	--allow-endpoint* --allow-source* --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --from --graph --region --scope --sts-endpoint --to --token(VARVE_TOKEN)	--allow-private-addresses --follow --no-store --unannounced	true	false	true		
 https://w3id.org/varve/acts#ShowLease	varve lease	dataset	--endpoint --region --sts-endpoint		true	false	true		
 https://w3id.org/varve/acts#ShowStatus	varve info	dataset	--allow-endpoint* --allow-source* --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --region --scope --sts-endpoint --token(VARVE_TOKEN)	--allow-private-addresses --no-store --unannounced	true	false	true		
 https://w3id.org/varve/acts#ShowStorage	varve storage	dataset	--endpoint --region --sts-endpoint		true	false	true		
-https://w3id.org/varve/acts#TakeOverLease			--endpoint --epoch --region --sts-endpoint		false	true	true		recorded spelling: lease <dataset> --take --epoch <n>
-https://w3id.org/varve/acts#TakeOverWriter			--assertion-audience --authority --client-assertion --client-id --client-secret(VARVE_CLIENT_SECRET) --from --scope --server* --token(VARVE_TOKEN)	--managed-identity	false	true	true		recorded spelling: manage takeover [<dataset>...]
+https://w3id.org/varve/acts#TakeOverLease					false	true	true		recorded spelling: lease <dataset> --take --epoch <n>
+https://w3id.org/varve/acts#TakeOverWriter					false	true	true		recorded spelling: manage takeover [<dataset>...]
 https://w3id.org/varve/acts#UpdateDataset	varve update	dataset	--allow-endpoint* --allow-source* --authority --client-id --client-secret(VARVE_CLIENT_SECRET) --credentials --endpoint --file --if-match --region --scope --sts-endpoint --token(VARVE_TOKEN) --update|-u	--allow-private-addresses --no-store --unannounced	false	false	false		
