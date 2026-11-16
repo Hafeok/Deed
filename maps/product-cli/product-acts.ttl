@@ -1,0 +1,570 @@
+# product-cli, modelled as acts from its product definition.
+# Draft 1, 2026-11-16. Source: mindovermachine-dev/decision-driven-design at
+# 84aa466, applications/sdlc/product-cli/product-definition.md (Draft 4,
+# 2026-11-03), chapters 1 to 6. The tool itself has no verbs yet
+# (mindovermachine-dev/product-cli at 528a1f8: only `product --version`).
+#
+# This map is written forward, from a specification. Where the definition does
+# not say what a facet needs, the value is a guess and its comment starts with
+# "Assumed:". Each is a question to the definition, not a proposal.
+#
+# 32 acts and 3 host commands. The pc: namespace is a placeholder.
+
+@prefix cli:  <https://w3id.org/deed/cli#> .
+@prefix deed: <https://w3id.org/deed/ns#> .
+@prefix pc:   <https://w3id.org/deed/maps/product-cli#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+pc:Tool a cli:Tool ;
+    cli:command "product" ;
+    cli:defaultResource pc:Draft .
+
+# ================================================================== actors
+
+pc:Author a deed:Actor ; rdfs:label "author" ;
+    rdfs:comment "Authors the What and is the only one whose decision puts a change at the head of the draft: a product owner or designer (definition, chapter 2; W12)." .
+pc:Agent a deed:Actor ; rdfs:label "agent" ;
+    rdfs:comment "Proposes What within a phase-gated session. Whatever it writes is a proposal attributed to the author; it never adopts (chapter 3, MCP; W12)." .
+pc:Realiser a deed:Actor ; rdfs:label "realiser" ;
+    rdfs:comment "Builds against the What: derives signatures, reads scenarios, runs conformance. An engineer or a build agent (chapter 2)." .
+
+# =============================================================== resources
+
+pc:Draft a deed:Resource ; deed:name "draft" ;
+    rdfs:comment "The working copy of one product's What: a positioned log in the repository, every change a commit (chapter 3, the draft log)." .
+pc:Product a deed:Resource ; deed:name "product" ;
+    rdfs:comment "A product root: name, purpose, owned domains and systems." .
+pc:What a deed:Resource ; deed:name "what" ; cli:name "domain" ;
+    rdfs:comment "The What as a whole at a draft position: one graph and its logic artefacts." .
+pc:Node a deed:Resource ; deed:name "node" ; cli:name "domain" ;
+    rdfs:comment "One What node of a kind: entity, event, command, view, flow and the rest of the seventeen." .
+pc:Format a deed:Resource ; deed:name "format" ;
+    rdfs:comment "A registered exporter: name, IRI, media type, supported editions, stability." .
+pc:Decider a deed:Resource ; deed:name "decider" ;
+    rdfs:comment "An aggregate's Decider: a derived signature and authored logic." .
+pc:Projector a deed:Resource ; deed:name "projector" ;
+    rdfs:comment "A View's Projector: the read-model peer of a Decider." .
+pc:Primitive a deed:Resource ; deed:name "primitive" ;
+    rdfs:comment "A named-algorithm primitive: reference, I/O contract, oracle pairs." .
+pc:Scenario a deed:Resource ; deed:name "scenario" ;
+    rdfs:comment "A given/when/then over events, a command with its subject, and expected events or state." .
+pc:Conformance a deed:Resource ; deed:name "conformance" ;
+    rdfs:comment "The judgement of a realised implementation by the product's scenarios, through the wire protocol." .
+pc:Question a deed:Resource ; deed:name "question" ;
+    rdfs:comment "An open question as an authored node: what the graph cannot yet decide, what it concerns, what it blocks." .
+pc:Proposal a deed:Resource ; deed:name "proposal" ;
+    rdfs:comment "A change set an agent submitted, held beside the head with its reason until the author adopts or rejects it." .
+
+# =================================================================== verbs
+
+pc:init a deed:Verb ; deed:name "init" ; rdfs:comment "Set the resource up where there was none." .
+pc:create a deed:Verb ; deed:name "create" ; cli:name "new" ; rdfs:comment "Bring the resource into being." .
+pc:show a deed:Verb ; deed:name "show" ; rdfs:comment "Give the resource as it is now." .
+pc:list a deed:Verb ; deed:name "list" ; rdfs:comment "Give every one of the resource." .
+pc:remove a deed:Verb ; deed:name "remove" ; cli:name "rm" ; rdfs:comment "Take the resource away." .
+pc:validate a deed:Verb ; deed:name "validate" ; rdfs:comment "Check the resource against what it must satisfy, and report what it does not." .
+pc:export a deed:Verb ; deed:name "export" ; rdfs:comment "Give the whole content of the resource." .
+pc:derive a deed:Verb ; deed:name "derive" ; rdfs:comment "Compute the part of the resource that follows from the rest." .
+pc:simulate a deed:Verb ; deed:name "simulate" ; rdfs:comment "Run the resource against its scenarios without realised code." .
+pc:run a deed:Verb ; deed:name "run" ; rdfs:comment "Execute the resource and report what happened." .
+pc:answer a deed:Verb ; deed:name "answer" ; rdfs:comment "Settle the resource with a response." .
+pc:diff a deed:Verb ; deed:name "diff" ; rdfs:comment "Say what differs between two states of the resource." .
+pc:adopt a deed:Verb ; deed:name "adopt" ; rdfs:comment "Accept the resource as one's own decision." .
+pc:reject a deed:Verb ; deed:name "reject" ; rdfs:comment "Decline the resource, with a reason." .
+
+# ================================================================== states
+
+pc:Scaffold a deed:State ; rdfs:comment "The repository's .product/ directory and the draft logs in it." .
+pc:Products a deed:State ; rdfs:comment "The product roots of a repository." .
+pc:Head a deed:State ; rdfs:comment "The What at the head of the draft: nodes, links, questions. Only an author's decision moves it (W12)." .
+pc:History a deed:State ; rdfs:comment "The draft's earlier positions." .
+pc:Decisions a deed:State ; rdfs:comment "The dpp/1 decision records of the draft log, each with a non-empty why (W11)." .
+pc:Proposals a deed:State ; rdfs:comment "Pending proposals and their status." .
+pc:Logic a deed:State ; rdfs:comment "The authored logic artefacts, held by digest." .
+pc:Versions a deed:State ; rdfs:comment "The What-version records, one per export, each superseding the last (D1.17)." .
+pc:Formats a deed:State ; rdfs:comment "The exporters this build registers." .
+pc:Phase a deed:State ; rdfs:comment "The phase of an agent session: structure, behaviour or surface." .
+
+# ================================================================ failures
+
+pc:NoWorkspace a deed:Failure ; deed:name "no-workspace" ; rdfs:comment "Assumed: the repository has no .product/. Run init." .
+pc:UnknownProduct a deed:Failure ; deed:name "unknown-product" ; rdfs:comment "Assumed: no product of that name in the repository. List the products." .
+pc:AlreadyInitialised a deed:Failure ; deed:name "already-initialised" ; rdfs:comment "Assumed: .product/ exists already. The definition does not say whether init refuses or repairs." .
+pc:ProductExists a deed:Failure ; deed:name "product-exists" ; rdfs:comment "Assumed: a product of that name exists." .
+pc:ShapeViolation a deed:Failure ; deed:name "shape-violation" ; rdfs:comment "The change set carries a violation of the edition's shapes; the draft is unchanged (W1, W5). Fix what the violation names." .
+pc:PhaseLocked a deed:Failure ; deed:name "phase-locked" ; rdfs:comment "The write belongs to a phase the session is not in (W9). Finish the earlier phase, or answer the questions that gate advancing." .
+pc:ReasonRequired a deed:Failure ; deed:name "reason-required" ; rdfs:comment "The decision has no reason; every record has a non-empty why (W11). Give one." .
+pc:UnknownNode a deed:Failure ; deed:name "unknown-node" ; rdfs:comment "Assumed: no node with that id." .
+pc:StillLinked a deed:Failure ; deed:name "still-linked" ; rdfs:comment "Assumed: removing the node would leave a violation. The definition says rm removes a node and its links, and W1 refuses a change set with a violation; it does not say which wins." .
+pc:UnknownFormat a deed:Failure ; deed:name "unknown-format" ; rdfs:comment "No exporter is registered under that name or IRI. Nothing was written; list the formats." .
+pc:EditionUnsupported a deed:Failure ; deed:name "edition-unsupported" ; rdfs:comment "The exporter does not support the What's edition. Nothing was written." .
+pc:SignatureDisagrees a deed:Failure ; deed:name "signature-disagrees" ; rdfs:comment "The authored signature or logic disagrees with what the graph derives (W2). Change the logic or the model." .
+pc:NotSimulable a deed:Failure ; deed:name "not-simulable" ; rdfs:comment "The logic cannot be evaluated by the simulator: it is not a Decider or Projector yet, it is prose. Rewrite it in the logic grammar, or name a primitive." .
+pc:NothingToDerive a deed:Failure ; deed:name "nothing-to-derive" ; rdfs:comment "Assumed: the aggregate or View has no commands or events to derive a signature from." .
+pc:OraclePairFails a deed:Failure ; deed:name "oracle-pair-fails" ; rdfs:comment "Assumed: a primitive's oracle pair does not hold." .
+pc:RunnerFailed a deed:Failure ; deed:name "runner-failed" ; rdfs:comment "Assumed: the runner could not be started or did not speak the wire protocol." .
+pc:QuestionClosed a deed:Failure ; deed:name "question-closed" ; rdfs:comment "Assumed: the question is already answered." .
+pc:NoSuchPosition a deed:Failure ; deed:name "no-such-position" ; rdfs:comment "Assumed: the draft has no such position." .
+pc:MalformedExport a deed:Failure ; deed:name "malformed-export" ; rdfs:comment "The export names a logic digest with no artefact beside it (D1.16)." .
+pc:StaleProposal a deed:Failure ; deed:name "stale-proposal" ; rdfs:comment "The proposal no longer holds against the head it would land on; the failing shape is shown. Reject it, or ask for a new one (D1.15)." .
+pc:UnknownProposal a deed:Failure ; deed:name "unknown-proposal" ; rdfs:comment "Assumed: no pending proposal with that number or id." .
+pc:NothingSelected a deed:Failure ; deed:name "nothing-selected" ; rdfs:comment "Assumed: neither proposals nor all was given." .
+
+# ================================================== settings and contexts
+
+pc:product a deed:Setting ; deed:name "product" ; deed:datatype xsd:string ;
+    rdfs:comment "The product, by name: one of those under .product/products/. Every verb takes it. Assumed: there is no default when a repository holds one product." .
+pc:port a deed:Setting ; deed:name "port" ; deed:datatype xsd:integer ;
+    rdfs:comment "The localhost port the workbench is served on." .
+pc:http a deed:Setting ; deed:name "http" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Serve MCP over HTTP as well as stdio, and start the workbench." .
+
+pc:ProductTarget a deed:Context ;
+    rdfs:comment "The product the acts of a session are about, in the repository the tool is run in. The repository itself is not a setting: it is the working directory." ;
+    deed:setting pc:product ;
+    deed:failure pc:NoWorkspace , pc:UnknownProduct .
+pc:Workbench a deed:Context ;
+    rdfs:comment "Where the workbench listens." ;
+    deed:setting pc:port ;
+    deed:failure deed:Nothing .
+pc:AgentTransport a deed:Context ;
+    rdfs:comment "How an agent session reaches the tool." ;
+    deed:setting pc:http ;
+    deed:failure deed:Nothing .
+
+# ============================================================== parameters
+
+pc:demo a deed:Parameter ; deed:name "demo" ; deed:role deed:Modifier ; deed:datatype xsd:boolean ; deed:required false ;
+    rdfs:comment "Seed the worked example." .
+pc:purpose a deed:Parameter ; deed:name "purpose" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "Assumed: what the product is for. The definition names name, purpose, owned domains and systems and no syntax." .
+pc:kind a deed:Parameter ; deed:name "kind" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The node kind: one of the seventeen (entity, value-object, relation, invariant, context, mapping, reference-data, event, command, view, trigger, ui-step, flow, system, journey, subject-kind, quality-demand)." .
+pc:id a deed:Parameter ; deed:name "id" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The identifier of the node, primitive, scenario or question." .
+pc:properties a deed:Parameter ; deed:name "property" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ; deed:repeatable true ;
+    rdfs:comment "Assumed: the fields of the node, which differ by kind. The definition writes them as an ellipsis." .
+pc:why a deed:Parameter ; deed:name "why" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "The reason for the decision. Every record has one; an adoption's defaults to a reference to the proposal. Assumed for direct writes: the definition shows --why on adopt only." .
+pc:strict a deed:Parameter ; deed:name "strict" ; deed:role deed:Modifier ; deed:datatype xsd:boolean ; deed:required false ;
+    rdfs:comment "Also report the warning findings (W3, W4)." .
+pc:format a deed:Parameter ; deed:name "format" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "The exporter, by name or IRI. The canonical one when absent. Not a matter of syntax alone: only the canonical document is landable." .
+pc:aggregate a deed:Parameter ; deed:name "aggregate" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The aggregate whose Decider is meant." .
+pc:viewName a deed:Parameter ; deed:name "view" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The View whose Projector is meant." .
+pc:runner a deed:Parameter ; deed:name "runner" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The realised implementation's runner: a program that reads requests on stdin and answers on stdout." .
+pc:answerText a deed:Parameter ; deed:name "answer" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "Assumed: the answer to the question." .
+pc:fromPosition a deed:Parameter ; deed:name "from-position" ; deed:role deed:Subject ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "The earlier draft position. Assumed: the head's predecessor when absent." .
+pc:toPosition a deed:Parameter ; deed:name "to-position" ; deed:role deed:Subject ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "The later draft position; the head when absent." .
+pc:against a deed:Parameter ; deed:name "export" ; deed:role deed:Modifier ; deed:datatype deed:Document ; deed:required false ;
+    rdfs:comment "A canonical export to compare the draft with, in place of two positions." .
+pc:proposals a deed:Parameter ; deed:name "proposals" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required false ; deed:repeatable true ;
+    rdfs:comment "Pending proposals, by number or id." .
+pc:all a deed:Parameter ; deed:name "all" ; deed:role deed:Modifier ; deed:datatype xsd:boolean ; deed:required false ;
+    rdfs:comment "Every pending proposal." .
+pc:changeSet a deed:Parameter ; deed:name "change-set" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ;
+    rdfs:comment "The change an agent proposes: the write it would have made, as a change set." .
+pc:reason a deed:Parameter ; deed:name "reason" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "Why the agent proposes it. Returned with the outcome; a rejection's reason is the instruction for the next proposal." .
+
+# ==================================================================== acts
+
+# ---- the draft and the product root
+
+pc:InitDraft a deed:Act ;
+    rdfs:comment "Scaffold .product/ in the repository and open the draft log." ;
+    deed:resource pc:Draft ; deed:verb pc:init ;
+    deed:actor pc:Author ;
+    deed:input ( pc:demo ) ;
+    deed:context deed:Nothing ;
+    deed:needs deed:Nothing ;
+    deed:changes [ deed:state pc:Scaffold ; deed:manner deed:Creates ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:Initialised ] ;
+    deed:failure pc:AlreadyInitialised .
+
+pc:DiffDraft a deed:Act ;
+    rdfs:comment "Say what changed between two draft positions, or between the draft and a given export." ;
+    deed:resource pc:Draft ; deed:verb pc:diff ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:fromPosition pc:toPosition pc:against ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:History ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Change ] ;
+    deed:failure pc:NoSuchPosition , pc:MalformedExport .
+
+pc:CreateProduct a deed:Act ;
+    rdfs:comment "Create a product root. Assumed: the new product is named by the product setting, since every verb takes it." ;
+    deed:resource pc:Product ; deed:verb pc:create ;
+    deed:actor pc:Author ;
+    deed:input ( pc:purpose pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Products ;
+    deed:changes [ deed:state pc:Products ; deed:manner deed:Creates ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:ProductRoot ] ;
+    deed:failure pc:ProductExists , pc:ShapeViolation .
+
+pc:ListProducts a deed:Act ;
+    rdfs:comment "Give the products of the repository." ;
+    deed:resource pc:Product ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Products ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ProductRoot ] ;
+    deed:failure deed:Nothing .
+
+pc:ShowProduct a deed:Act ;
+    rdfs:comment "Give a product's root: name, purpose, owned domains and systems." ;
+    deed:resource pc:Product ; deed:verb pc:show ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Products , pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields pc:ProductRoot ] ;
+    deed:failure deed:Nothing .
+
+# ---- What nodes
+
+pc:CreateNode a deed:Act ;
+    rdfs:comment "Capture a What node of one kind, as the author's own decision. A change set with a violation is refused and the draft is unchanged (W1)." ;
+    deed:resource pc:Node ; deed:verb pc:create ;
+    deed:actor pc:Author ;
+    deed:input ( pc:kind pc:id pc:properties pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:ShapeViolation , pc:ReasonRequired .
+
+pc:ShowNode a deed:Act ;
+    rdfs:comment "Give a node and its links." ;
+    deed:resource pc:Node ; deed:verb pc:show ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:id ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeDescription ] ;
+    deed:failure pc:UnknownNode .
+
+pc:ListNodes a deed:Act ;
+    rdfs:comment "Give the nodes of the What." ;
+    deed:resource pc:Node ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:NodeDescription ] ;
+    deed:failure deed:Nothing .
+
+pc:RemoveNode a deed:Act ;
+    rdfs:comment "Remove a node and its links, as the author's own decision. The draft is a log, so the removal is a new position and the node remains in the history." ;
+    deed:resource pc:Node ; deed:verb pc:remove ;
+    deed:actor pc:Author ;
+    deed:input ( pc:id pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:UnknownNode , pc:StillLinked , pc:ReasonRequired .
+
+pc:ValidateWhat a deed:Act ;
+    rdfs:comment "Report the What's violations; with strict, its warning findings too (D1.19)." ;
+    deed:resource pc:What ; deed:verb pc:validate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:strict ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Finding ] ;
+    deed:failure deed:Nothing .
+
+pc:ExportWhat a deed:Act ;
+    rdfs:comment "Write the What through an exporter over the canonical graph, with its What-version record. Two exports of one position are byte-identical (W7). Inferred from D1.17: each export is a new What-version that supersedes the last and records who exported and why, so this act writes." ;
+    deed:resource pc:What ; deed:verb pc:export ;
+    deed:actor pc:Author , pc:Agent ;
+    deed:input ( pc:format pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic , pc:Decisions , pc:Formats ;
+    deed:changes [ deed:state pc:Versions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:ExportDocument ] ;
+    deed:failure pc:UnknownFormat , pc:EditionUnsupported , pc:ReasonRequired .
+
+pc:ListFormats a deed:Act ;
+    rdfs:comment "Give each registered format: name, IRI, media type, supported editions, stability." ;
+    deed:resource pc:Format ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context deed:Nothing ;
+    deed:needs pc:Formats ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:FormatDescription ] ;
+    deed:failure deed:Nothing ;
+    cli:spelledAs "domain export --list-formats" .
+
+# ---- behaviour
+
+pc:DeriveDecider a deed:Act ;
+    rdfs:comment "Derive a Decider's signature from the event model and write it to the graph. The signature is never authored (W2)." ;
+    deed:resource pc:Decider ; deed:verb pc:derive ;
+    deed:actor pc:Author ;
+    deed:input ( pc:aggregate pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Converges ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:Signature ] ;
+    deed:failure pc:NothingToDerive .
+
+pc:ValidateDecider a deed:Act ;
+    rdfs:comment "Check a Decider's authored logic against its derived signature." ;
+    deed:resource pc:Decider ; deed:verb pc:validate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:aggregate ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Finding ] ;
+    deed:failure pc:SignatureDisagrees .
+
+pc:SimulateDecider a deed:Act ;
+    rdfs:comment "Run a Decider's scenarios against its logic, and report each outcome with coverage and justification findings." ;
+    deed:resource pc:Decider ; deed:verb pc:simulate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:aggregate ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ScenarioOutcome ] ;
+    deed:failure pc:SignatureDisagrees , pc:NotSimulable .
+
+pc:DeriveProjector a deed:Act ;
+    rdfs:comment "Derive a Projector's signature from the event model and write it to the graph. The signature is never authored (W2)." ;
+    deed:resource pc:Projector ; deed:verb pc:derive ;
+    deed:actor pc:Author ;
+    deed:input ( pc:viewName pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Converges ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:Signature ] ;
+    deed:failure pc:NothingToDerive .
+
+pc:ValidateProjector a deed:Act ;
+    rdfs:comment "Check a Projector's authored logic against its derived signature." ;
+    deed:resource pc:Projector ; deed:verb pc:validate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:viewName ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Finding ] ;
+    deed:failure pc:SignatureDisagrees .
+
+pc:SimulateProjector a deed:Act ;
+    rdfs:comment "Run a Projector's scenarios against its logic, and report each outcome with coverage and justification findings." ;
+    deed:resource pc:Projector ; deed:verb pc:simulate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:viewName ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ScenarioOutcome ] ;
+    deed:failure pc:SignatureDisagrees , pc:NotSimulable .
+
+pc:CreatePrimitive a deed:Act ;
+    rdfs:comment "Declare a named-algorithm primitive: its reference, I/O contract and oracle pairs." ;
+    deed:resource pc:Primitive ; deed:verb pc:create ;
+    deed:actor pc:Author ;
+    deed:input ( pc:id pc:properties pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:ShapeViolation , pc:ReasonRequired .
+
+pc:ValidatePrimitive a deed:Act ;
+    rdfs:comment "Check a primitive against its contract and oracle pairs." ;
+    deed:resource pc:Primitive ; deed:verb pc:validate ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input ( pc:id ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Finding ] ;
+    deed:failure pc:UnknownNode , pc:OraclePairFails .
+
+pc:CreateScenario a deed:Act ;
+    rdfs:comment "Author a scenario, or draw one from a flow." ;
+    deed:resource pc:Scenario ; deed:verb pc:create ;
+    deed:actor pc:Author ;
+    deed:input ( pc:id pc:properties pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:ShapeViolation , pc:ReasonRequired .
+
+pc:ListScenarios a deed:Act ;
+    rdfs:comment "Give the product's scenarios." ;
+    deed:resource pc:Scenario ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:NodeDescription ] ;
+    deed:failure deed:Nothing .
+
+pc:RunScenario a deed:Act ;
+    rdfs:comment "Run scenarios in the simulator. Assumed: all of them; the definition gives the verb no operand." ;
+    deed:resource pc:Scenario ; deed:verb pc:run ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ScenarioOutcome ] ;
+    deed:failure pc:NotSimulable .
+
+pc:RunConformance a deed:Act ;
+    rdfs:comment "Drive a realised implementation through the wire protocol with the product's scenarios and report the outcomes. Starts a program outside the tool." ;
+    deed:resource pc:Conformance ; deed:verb pc:run ;
+    deed:actor pc:Realiser ;
+    deed:input ( pc:runner ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Logic ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ScenarioOutcome ] ;
+    deed:failure pc:RunnerFailed .
+
+# ---- questions
+
+pc:CreateQuestion a deed:Act ;
+    rdfs:comment "Record an open question: what the graph cannot yet decide, which nodes it concerns, what it blocks." ;
+    deed:resource pc:Question ; deed:verb pc:create ;
+    deed:actor pc:Author ;
+    deed:input ( pc:id pc:properties pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:ShapeViolation , pc:ReasonRequired .
+
+pc:ListQuestions a deed:Act ;
+    rdfs:comment "Give the open questions." ;
+    deed:resource pc:Question ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent , pc:Realiser ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:NodeDescription ] ;
+    deed:failure deed:Nothing .
+
+pc:AnswerQuestion a deed:Act ;
+    rdfs:comment "Answer an open question, which may let an agent session advance." ;
+    deed:resource pc:Question ; deed:verb pc:answer ;
+    deed:actor pc:Author ;
+    deed:input ( pc:id pc:answerText pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:NodeWritten ] ;
+    deed:failure pc:UnknownNode , pc:QuestionClosed .
+
+# ---- proposals and decisions
+
+pc:CreateProposal a deed:Act ;
+    rdfs:comment "Submit a change set as a proposal with its reason: shape-checked and phase-gated when submitted, held beside the head and not in it, attributed to the author. This is what every write by an agent is. The definition gives it no verb of its own: an agent calls the author's verbs and gets this (finding P1)." ;
+    deed:resource pc:Proposal ; deed:verb pc:create ;
+    deed:actor pc:Agent ;
+    deed:input ( pc:changeSet pc:reason ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Head , pc:Phase ;
+    deed:changes [ deed:state pc:Proposals ; deed:manner deed:Creates ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields pc:ProposalDescription ] ;
+    deed:failure pc:ShapeViolation , pc:PhaseLocked , pc:ReasonRequired .
+
+pc:ListProposals a deed:Act ;
+    rdfs:comment "Number the pending proposals." ;
+    deed:resource pc:Proposal ; deed:verb pc:list ;
+    deed:actor pc:Author , pc:Agent ;
+    deed:input deed:Nothing ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Proposals ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ProposalDescription ] ;
+    deed:failure deed:Nothing .
+
+pc:ShowProposal a deed:Act ;
+    rdfs:comment "Give a proposal: its change set, reason, findings and alternatives." ;
+    deed:resource pc:Proposal ; deed:verb pc:show ;
+    deed:actor pc:Author , pc:Agent ;
+    deed:input ( pc:proposals ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Proposals , pc:Head ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:ProposalDescription ] ;
+    deed:failure pc:UnknownProposal .
+
+pc:AdoptProposal a deed:Act ;
+    rdfs:comment "Adopt proposals as the author's decision: each change set is checked again against the head it lands on, each gets its own record, and adopting one alternative withdraws its siblings (D1.12, D1.15)." ;
+    deed:resource pc:Proposal ; deed:verb pc:adopt ;
+    deed:actor pc:Author ;
+    deed:input ( pc:proposals pc:all pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Proposals , pc:Head ;
+    deed:changes [ deed:state pc:Head ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Decisions ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Proposals ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Adoption ] ;
+    deed:failure pc:UnknownProposal , pc:StaleProposal , pc:NothingSelected .
+
+pc:RejectProposal a deed:Act ;
+    rdfs:comment "Reject proposals with a reason, which is returned to the agent as the outcome of its proposal." ;
+    deed:resource pc:Proposal ; deed:verb pc:reject ;
+    deed:actor pc:Author ;
+    deed:input ( pc:proposals pc:why ) ;
+    deed:context pc:ProductTarget ;
+    deed:needs pc:Proposals ;
+    deed:changes [ deed:state pc:Decisions ; deed:manner deed:Appends ] ,
+                 [ deed:state pc:Proposals ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Stream ; deed:yields pc:Rejection ] ;
+    deed:failure pc:UnknownProposal , pc:ReasonRequired .
+
+# =================================================================== hosts
+
+pc:View a cli:Host ; deed:name "view" ;
+    rdfs:comment "Serve the workbench until stopped: a live view of the draft log on localhost. Its only writes are adopt and reject, through the same acts as the CLI (D1.13)." ;
+    deed:context pc:ProductTarget , pc:Workbench ;
+    cli:performs pc:AdoptProposal , pc:RejectProposal .
+
+pc:Mcp a cli:Host ; deed:name "mcp" ;
+    rdfs:comment "Serve the agent surface until stopped, over stdio or HTTP, in a phase-gated session. With http it starts the workbench too." ;
+    deed:context pc:ProductTarget , pc:AgentTransport .
+
+pc:Review a cli:Host ; deed:name "review" ;
+    rdfs:comment "Step through pending proposals one at a time with single-key adopt, reject, skip and quit, until quit. Interactive, so not an act: it has no outcome of its own." ;
+    deed:context pc:ProductTarget ;
+    cli:performs pc:AdoptProposal , pc:RejectProposal ;
+    cli:spelledAs "proposal review" .
