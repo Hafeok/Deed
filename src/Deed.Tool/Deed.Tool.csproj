@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Deed.Tool</RootNamespace>
+    <Description>Validates an application's Deed act map against Deed's shapes and prints the report as design guidance.</Description>
+
+    <!-- A .NET tool. Package ID is a working name until #35 and #10 are decided. -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>deed</ToolCommandName>
+    <PackageId>Deed.Tool</PackageId>
+    <PackageTags>deed;cli;mcp;rdf;shacl;act-map</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Deed.Vocabulary\Deed.Vocabulary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

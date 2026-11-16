@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Deed.Tool/Deed.Tool.csproj" />
+    <Project Path="src/Deed.Vocabulary/Deed.Vocabulary.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Deed.Tests/Deed.Tests.csproj" />
+  </Folder>
+</Solution>

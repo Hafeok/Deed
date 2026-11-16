@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Deed.Vocabulary</RootNamespace>
+    <Description>Deed's vocabulary and shapes, and validation of an application's act map against them.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Varve.Turtle" />
+    <PackageReference Include="Varve.Shacl" />
+    <PackageReference Include="Varve.Shacl.Sparql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Turtle at the repository root is the source; the assembly carries a copy. -->
+    <EmbeddedResource Include="..\..\vocabulary\deed.ttl" LogicalName="Deed.Vocabulary.deed.ttl" />
+    <EmbeddedResource Include="..\..\vocabulary\deed-cli.ttl" LogicalName="Deed.Vocabulary.deed-cli.ttl" />
+    <EmbeddedResource Include="..\..\vocabulary\deed-shapes.ttl" LogicalName="Deed.Vocabulary.deed-shapes.ttl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Deed.Tests" />
+  </ItemGroup>
+
+</Project>
