@@ -1,6 +1,6 @@
 """Reference derivation of commands and effect hints from an act map.
 
-Writes tests/fixtures/*.commands.tsv. An oracle for the .NET tool, not part of it.
+Writes tests/fixtures/*.commands.tsv (acts) and *.hosts.tsv (hosts). An oracle for the .NET tool, not part of it.
 Usage: python3 tests/reference/commands.py [repository root]
 Needs: rdflib.
 """
@@ -50,7 +50,8 @@ def run(mapfile,out):
         if i!=D.Nothing:
             for p in Collection(g,i):
                 b=g.value(p,C.bindAs); role=g.value(p,D.role)
-                place(p,(role==D.Subject and b!=C.Option) or b==C.Operand)
+                assert not (role==D.Modifier and b==C.Operand), f'a modifier is never an operand (ADR 0039): {p}'
+                place(p,role==D.Subject and b!=C.Option)
                 fa=g.value(p,C.fileAlternative)
                 if fa: opts.append('--'+str(fa))
         for s in g.objects(a,C.surfaceOption): place(s,False)
@@ -66,6 +67,27 @@ def run(mapfile,out):
         # options, flags or exit codes. Its hints stay: they belong to the act, not the CLI.
         if rec: ops=[];opts=[];flags=[];codes=[]
         rows.append((str(a),command,' '.join(ops),' '.join(sorted(set(opts))),' '.join(sorted(set(flags))),str(ro).lower(),str(de).lower(),str(idem).lower(),' '.join(sorted(set(codes))),'recorded spelling: '+str(rec) if rec else ''))
+    # Hosts (ADR 0003, 0019): the host's name under the tool's command; the operand-bound
+    # setting, options and flags from the settings of its contexts, as for an act; exit codes
+    # from its contexts' failures. A host with cli:spelledAs has no command line.
+    hrows=[]
+    for h in sorted(g.subjects(RDF.type,C.Host)):
+        ops=[];opts=[];flags=[];codes=[]
+        for c in sorted(g.objects(h,D.context)):
+            for st in sorted(g.objects(c,D.setting)):
+                if g.value(st,C.bindAs)==C.Operand: ops.append(nm(st))
+                elif g.value(st,D.datatype)==XSD.boolean: flags.append(opt(st))
+                else: opts.append(opt(st))
+            for fl in g.objects(c,D.failure):
+                ec=g.value(fl,C.exitCode) if fl!=D.Nothing else None
+                if ec is not None: codes.append(f'{g.value(fl,D.name)}={ec}')
+        rec=g.value(h,C.spelledAs)
+        command='' if rec else ' '.join([cmd,nm(h)])
+        if command: paths[command]+=1
+        if rec: ops=[];opts=[];flags=[];codes=[]
+        performs=' '.join(sorted(str(x) for x in g.objects(h,C.performs)))
+        hrows.append((str(h),command,' '.join(ops),' '.join(sorted(set(opts))),' '.join(sorted(set(flags))),' '.join(sorted(set(codes))),performs,'recorded spelling: '+str(rec) if rec else ''))
+    open(f'{root}/{out}'.replace('.commands.tsv','.hosts.tsv'),'w').write('host\tcommand\toperands\toptions\tflags\texit-codes\tperforms\tnote\n'+''.join('\t'.join(r)+'\n' for r in hrows))
     dup=[p for p,n in paths.items() if n>1]; assert not dup,dup
     open(f'{root}/{out}','w').write('act\tcommand\toperands\toptions\tflags\tread-only\tdestructive\tidempotent\texit-codes\tnote\n'+''.join('\t'.join(r)+'\n' for r in rows))
     print(out,len(rows),'acts',sum(1 for r in rows if r[1]),'commands')

@@ -38,6 +38,8 @@ y:BadFailure a deed:Failure ; deed:name "NOT_FOUND" .
 y:BadParameter a deed:Parameter ; deed:name "bad name" ; rdfs:comment "A parameter." .
 # a subject that is a yes-or-no; a short name of two characters
 y:BadSubject a deed:Parameter ; deed:name "really" ; deed:role deed:Subject ; deed:datatype xsd:boolean ; deed:required false ; cli:short "rr" ; rdfs:comment "Really." .
+# a modifier bound as an operand
+y:BadModifier a deed:Parameter ; deed:name "loudly" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ; cli:bindAs cli:Operand ; rdfs:comment "How loudly." .
 # name in upper case; no datatype; no comment
 y:BadSetting a deed:Setting ; deed:name "API_KEY" .
 # no comment, no setting, no failure facet

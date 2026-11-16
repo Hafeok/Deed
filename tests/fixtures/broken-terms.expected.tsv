@@ -1,4 +1,5 @@
 severity	focus	shape	message
+Info	https://example.org/y#BadModifier	_:property-shape	This is bound against its rule: a subject as an option, or the tool's target setting as an operand. Does the rule give a worse command line, or is the role wrong in the act layer?
 Violation	https://example.org/y#BadActor	_:property-shape	What is this role called by the people who grant it?
 Violation	https://example.org/y#BadActor	_:property-shape	What makes someone this actor: a grant, a credential, access to a place? If the answer names a person or a program, it is an identity, not a role.
 Violation	https://example.org/y#BadContext	_:property-shape	How does this context fail every act that uses it: unreachable, refused, held by another? Name each, or say deed:Nothing. Stating it here keeps it out of every act.
@@ -8,6 +9,7 @@ Violation	https://example.org/y#BadExit	_:property-shape	A failure exits 1 unles
 Violation	https://example.org/y#BadFailure	_:property-shape	A failure has one name that a program can match on, lower case, hyphenated. Name what went wrong, not where it was noticed.
 Violation	https://example.org/y#BadFailure	_:property-shape	What should the actor do next when this happens: retry, look again, fix the input, ask someone? A failure that does not say is only an error message.
 Violation	https://example.org/y#BadHost	_:property-shape	What does this command do until it is stopped? If it ever returns something on success, the part that returns is an act.
+Violation	https://example.org/y#BadModifier	https://w3id.org/deed/shapes#ModifierIsNotAnOperand	A modifier is never an operand: operands are what the act is done to. If this must be given by position, is it a subject?
 Violation	https://example.org/y#BadOption	_:property-shape	Why does only the command line need this option? If an agent or an HTTP client would want it too, it is a parameter of the act.
 Violation	https://example.org/y#BadParameter	_:property-shape	A parameter has one name, lower case, hyphenated, and the name means this one thing in every act of the tool. What is it called?
 Violation	https://example.org/y#BadParameter	_:property-shape	Can the act proceed without this parameter? Say true or false. If it is required only when another parameter is given, there are probably two acts here.

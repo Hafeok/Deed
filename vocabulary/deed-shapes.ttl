@@ -1,5 +1,4 @@
 # Deed: SHACL shapes for the act layer and the CLI binding layer.
-# Draft 1, 2026-11-15. Working draft.
 #
 # The shapes are the teaching instrument (decision 8). A message does not
 # say what is malformed; it names the design question the author has not yet
@@ -317,7 +316,13 @@ dsh:BindAs a sh:NodeShape ;
     sh:targetSubjectsOf cli:bindAs ;
     sh:property [ sh:path cli:bindAs ; sh:maxCount 1 ; sh:in ( cli:Operand cli:Option ) ] ;
     sh:property [ sh:path cli:bindAs ; sh:maxCount 0 ; sh:severity sh:Info ;
-        sh:message "This is bound against its rule: a subject as an option, or a modifier or setting as an operand. Does the rule give a worse command line, or is the role wrong in the act layer?" ] .
+        sh:message "This is bound against its rule: a subject as an option, or the tool's target setting as an operand. Does the rule give a worse command line, or is the role wrong in the act layer?" ] .
+
+dsh:ModifierIsNotAnOperand a sh:NodeShape ;
+    sh:targetClass deed:Parameter ;
+    sh:not [ sh:and ( [ sh:property [ sh:path deed:role ; sh:hasValue deed:Modifier ] ]
+                      [ sh:property [ sh:path cli:bindAs ; sh:hasValue cli:Operand ] ] ) ] ;
+    sh:message "A modifier is never an operand: operands are what the act is done to. If this must be given by position, is it a subject?" .
 
 dsh:CliName a sh:NodeShape ;
     sh:targetSubjectsOf cli:name ;

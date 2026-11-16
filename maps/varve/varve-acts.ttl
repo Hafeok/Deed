@@ -18,7 +18,7 @@
 varve:Tool a cli:Tool ;
     cli:command "varve" ;
     cli:defaultResource varve:Dataset ;
-    cli:defaultVerb varve:show .
+    cli:defaultVerb deed:show .
 
 # ================================================================== actors
 
@@ -61,10 +61,8 @@ varve:ReaderRecord a deed:Resource ; deed:name "reader" ; cli:name "readers" ; d
     rdfs:comment "The announcement of one instance reading a dataset's extents (ADR 0160)." .
 
 # =================================================================== verbs
+# create, show and list are Deed's (ADR 0025).
 
-varve:create a deed:Verb ; deed:name "create" ; rdfs:comment "Bring the resource into being." .
-varve:show a deed:Verb ; deed:name "show" ; rdfs:comment "Give the resource as it is now." .
-varve:list a deed:Verb ; deed:name "list" ; rdfs:comment "Give every one of the resource." .
 varve:load a deed:Verb ; deed:name "load" ; rdfs:comment "Add documents to the resource in bulk, as one change." .
 varve:query a deed:Verb ; deed:name "query" ; rdfs:comment "Evaluate a query over the resource." .
 varve:update a deed:Verb ; deed:name "update" ; rdfs:comment "Execute an update request against the resource, as one change or none." .
@@ -281,8 +279,8 @@ varve:format a cli:SurfaceOption ; deed:name "format" ; cli:short "f" ; deed:dat
     rdfs:comment "The syntax the outcome is written in. REST negotiates it; MCP returns structure." .
 varve:out a cli:SurfaceOption ; deed:name "out" ; deed:datatype xsd:string ;
     rdfs:comment "A file to save the outcome to as well. Another surface returns the outcome and the caller keeps it." .
-varve:exitCodeFlag a cli:SurfaceOption ; deed:name "exit-code" ; deed:datatype xsd:boolean ;
-    rdfs:comment "Signal a non-empty plan by exit code 2, for scripts. Another surface reads the outcome." .
+# apply --plan --exit-code is not modelled: an exit code reports failure and
+# nothing else (ADR 0020). A script reads the plan.
 
 # ==================================================================== acts
 # Outcome kinds are named, not yet described.
@@ -291,7 +289,7 @@ varve:exitCodeFlag a cli:SurfaceOption ; deed:name "exit-code" ; deed:datatype x
 
 varve:ShowStatus a deed:Act ;
     rdfs:comment "Give a dataset's status." ;
-    deed:resource varve:Status ; deed:verb varve:show ;
+    deed:resource varve:Status ; deed:verb deed:show ;
     deed:actor varve:Reader , varve:Custodian ;
     deed:input deed:Nothing ;
     deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
@@ -316,7 +314,7 @@ varve:QueryDataset a deed:Act ;
 
 varve:CreateDataset a deed:Act ;
     rdfs:comment "Create a dataset in a directory that holds none." ;
-    deed:resource varve:Dataset ; deed:verb varve:create ;
+    deed:resource varve:Dataset ; deed:verb deed:create ;
     deed:actor varve:Custodian ;
     deed:input ( varve:directory ) ;
     deed:context deed:Nothing ;
@@ -372,7 +370,7 @@ varve:CheckpointDataset a deed:Act ;
 
 varve:ShowFeed a deed:Act ;
     rdfs:comment "Give a dataset's commits in order, to a position or without end." ;
-    deed:resource varve:Feed ; deed:verb varve:show ;
+    deed:resource varve:Feed ; deed:verb deed:show ;
     deed:actor varve:Reader , varve:Custodian ;
     deed:input ( varve:from varve:to varve:graph varve:follow ) ;
     deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
@@ -406,7 +404,7 @@ varve:PlanDeclarations a deed:Act ;
     deed:changes deed:Nothing ;
     deed:outcome [ a deed:Single ; deed:yields varve:ManagementPlan ] ;
     deed:failure varve:DoesNotParse , varve:DeclarationInvalid ;
-    cli:surfaceOption varve:out , varve:exitCodeFlag ;
+    cli:surfaceOption varve:out ;
     cli:spelledAs "apply <files...> --plan" .
 
 varve:ApplyDeclarations a deed:Act ;
@@ -448,7 +446,7 @@ varve:ConvertConfiguration a deed:Act ;
 
 varve:ShowConfiguration a deed:Act ;
     rdfs:comment "Give the effective configuration a server would start with, secrets redacted, and validate it." ;
-    deed:resource varve:Configuration ; deed:verb varve:show ;
+    deed:resource varve:Configuration ; deed:verb deed:show ;
     deed:actor varve:Operator ;
     deed:input deed:Nothing ;
     deed:context varve:ServerConfiguration ;
@@ -488,15 +486,15 @@ varve:TakeOverWriter a deed:Act ;
 # ---- noun-verb groups
 
 varve:ShowLease a deed:Act ;
-    rdfs:comment "Say who holds a dataset where it is stored: a directory's owner and whether its lock is held, or an object store's writer record." ;
-    deed:resource varve:Lease ; deed:verb varve:show ;
+    rdfs:comment "Say who holds a dataset where it is stored: a directory's owner and whether its lock is held, or an object store's writer record. A held lock is part of the answer, not a failure (ADR 0020); the hand-written command exits 1 on it." ;
+    deed:resource varve:Lease ; deed:verb deed:show ;
     deed:actor varve:Custodian ;
     deed:input deed:Nothing ;
     deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
     deed:needs varve:LeaseLock , varve:WriterRecord ;
     deed:changes deed:Nothing ;
     deed:outcome [ a deed:Single ; deed:yields varve:LeaseStatus ] ;
-    deed:failure varve:LockHeld .
+    deed:failure deed:Nothing .
 
 varve:BreakLease a deed:Act ;
     rdfs:comment "Clear the owner file of a directory's lock that proves free. A held lock is never broken (ADR 0116)." ;
@@ -524,7 +522,7 @@ varve:TakeOverLease a deed:Act ;
 
 varve:ShowStorage a deed:Act ;
     rdfs:comment "Report a dataset in an object store as its objects show it: its catalog, extent sets, what is retained for readers, and its reader records (ADR 0162)." ;
-    deed:resource varve:Storage ; deed:verb varve:show ;
+    deed:resource varve:Storage ; deed:verb deed:show ;
     deed:actor varve:Custodian ;
     deed:input deed:Nothing ;
     deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
@@ -535,7 +533,7 @@ varve:ShowStorage a deed:Act ;
 
 varve:ListReaders a deed:Act ;
     rdfs:comment "Give every reader record, the versions it announces and what it holds back from deletion." ;
-    deed:resource varve:ReaderRecord ; deed:verb varve:list ;
+    deed:resource varve:ReaderRecord ; deed:verb deed:list ;
     deed:actor varve:Custodian ;
     deed:input deed:Nothing ;
     deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
