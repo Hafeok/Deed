@@ -1,0 +1,593 @@
+# Varve's command line, modelled as acts.
+# Draft 1, 2026-11-15. Source: github.com/Hafeok/Varve at e684009
+# (2026-11-12), src/Varve.Server/Commands. Roles from ADRs 0037, 0105, 0127,
+# 0137, 0163, 0181.
+#
+# 22 acts and 2 host commands cover the 18 commands System.CommandLine
+# registers. One command is several acts where a flag changes what it does
+# (apply: 4, lease: 3, serve: 1 act beside the host).
+#
+# The varve: namespace here is a working one for this test, not Varve's.
+
+@prefix cli:   <https://w3id.org/deed/cli#> .
+@prefix deed:  <https://w3id.org/deed/ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix varve: <https://w3id.org/varve/acts#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+varve:Tool a cli:Tool ;
+    cli:command "varve" ;
+    cli:defaultResource varve:Dataset ;
+    cli:defaultVerb varve:show .
+
+# ================================================================== actors
+
+varve:Reader a deed:Actor ; rdfs:label "reader" ;
+    rdfs:comment "Holds a read grant on the dataset (ADR 0037)." .
+varve:Writer a deed:Actor ; rdfs:label "writer" ;
+    rdfs:comment "Holds a write grant on the dataset (ADR 0037)." .
+varve:DatasetAdmin a deed:Actor ; rdfs:label "dataset admin" ;
+    rdfs:comment "Holds an admin grant on the dataset (ADR 0163)." .
+varve:Operator a deed:Actor ; rdfs:label "operator" ;
+    rdfs:comment "Holds the operator role on the fleet's management plane (ADR 0163). A person or an automation; the role is the same (ADR 0181 point 3)." .
+varve:Custodian a deed:Actor ; rdfs:label "custodian" ;
+    rdfs:comment "Has access to the place a dataset is stored: its directory, or its prefix in an object store. No grant is consulted; the storage's own permissions are the boundary (ADR 0105 embedded mode, ADR 0137)." .
+
+# =============================================================== resources
+
+varve:Dataset a deed:Resource ; deed:name "dataset" ;
+    rdfs:comment "An event-sourced RDF dataset: a log of commits and what is derived from it." .
+varve:Status a deed:Resource ; deed:name "status" ; cli:name "info" ;
+    rdfs:comment "A dataset's id, head, durability, settings, checkpoints and projection, as GET /status answers it." .
+varve:Feed a deed:Resource ; deed:name "feed" ;
+    rdfs:comment "A dataset's commits in order (ADRs 0097, 0118)." .
+varve:Setup a deed:Resource ; deed:name "setup" ;
+    rdfs:comment "What a setup file declares of one dataset: that it exists, its settings, baseline and migrations (ADR 0130)." .
+varve:Declaration a deed:Resource ; deed:name "declaration" ;
+    rdfs:comment "The management declarations of a fleet: TriG graphs, each owned whole by one file (ADR 0163)." .
+varve:Plan a deed:Resource ; deed:name "plan" ;
+    rdfs:comment "A saved comparison of declarations with what a server holds, with the versions it read." .
+varve:Configuration a deed:Resource ; deed:name "configuration" ;
+    rdfs:comment "A server's host configuration (ADR 0115)." .
+varve:EventDeclaration a deed:Resource ; deed:name "event-declaration" ;
+    rdfs:comment "A dataset's event type declarations (ADR 0167)." .
+varve:Writer_ a deed:Resource ; deed:name "writer" ;
+    rdfs:comment "The one instance of a fleet that writes a dataset, by its epoch (ADRs 0136, 0179)." .
+varve:Lease a deed:Resource ; deed:name "lease" ;
+    rdfs:comment "What keeps a dataset to one writer where it is stored: a directory's lock, or an object store's writer record (ADRs 0116, 0136)." .
+varve:Storage a deed:Resource ; deed:name "storage" ;
+    rdfs:comment "A dataset in an object store as its objects show it (ADR 0162)." .
+varve:ReaderRecord a deed:Resource ; deed:name "reader" ; cli:name "readers" ; deed:within varve:Storage ;
+    rdfs:comment "The announcement of one instance reading a dataset's extents (ADR 0160)." .
+
+# =================================================================== verbs
+
+varve:create a deed:Verb ; deed:name "create" ; rdfs:comment "Bring the resource into being." .
+varve:show a deed:Verb ; deed:name "show" ; rdfs:comment "Give the resource as it is now." .
+varve:list a deed:Verb ; deed:name "list" ; rdfs:comment "Give every one of the resource." .
+varve:load a deed:Verb ; deed:name "load" ; rdfs:comment "Add documents to the resource in bulk, as one change." .
+varve:query a deed:Verb ; deed:name "query" ; rdfs:comment "Evaluate a query over the resource." .
+varve:update a deed:Verb ; deed:name "update" ; rdfs:comment "Execute an update request against the resource, as one change or none." .
+varve:export a deed:Verb ; deed:name "export" ; rdfs:comment "Give the whole content of the resource." .
+varve:checkpoint a deed:Verb ; deed:name "checkpoint" ; rdfs:comment "Record a point the resource can be restored or read from." .
+varve:plan a deed:Verb ; deed:name "plan" ; rdfs:comment "Say what applying would change, and change nothing." .
+varve:apply a deed:Verb ; deed:name "apply" ; rdfs:comment "Make what is held equal to what the resource declares." .
+varve:convert a deed:Verb ; deed:name "convert" ; rdfs:comment "Give the resource in another form." .
+varve:move a deed:Verb ; deed:name "move" ; rdfs:comment "Take the resource from where it is kept to another place." .
+varve:takeover a deed:Verb ; deed:name "takeover" ; rdfs:comment "Take the resource from the one that holds it." .
+varve:break a deed:Verb ; deed:name "break" ; rdfs:comment "Clear a claim on the resource that nothing holds any longer." .
+varve:forget a deed:Verb ; deed:name "forget" ; rdfs:comment "Remove the record of one of the resource that is gone." .
+
+# ================================================================== states
+
+varve:Log a deed:State ; rdfs:comment "A dataset's commits. Read by readers; appended to by writers." .
+varve:Data a deed:State ; rdfs:comment "A dataset's quads at a position. Read by readers." .
+varve:Checkpoints a deed:State ; rdfs:comment "A dataset's checkpoints. Read by readers; written by dataset admins." .
+varve:Settings a deed:State ; rdfs:comment "A dataset's settings. Read by readers; written by dataset admins." .
+varve:Existence a deed:State ; rdfs:comment "Whether a dataset exists on a server. Written by operators." .
+varve:LeaseLock a deed:State ; rdfs:comment "A dataset directory's lock and owner file. Read and written by custodians." .
+varve:WriterRecord a deed:State ; rdfs:comment "An object-store dataset's writer epoch, holder and claims. Read by custodians and operators; written by a takeover." .
+varve:ReaderRecords a deed:State ; rdfs:comment "An object-store dataset's reader announcements. Read and written by custodians." .
+varve:Extents a deed:State ; rdfs:comment "An object-store dataset's catalog and extent sets. Read by custodians." .
+varve:ManagementGraphs a deed:State ; rdfs:comment "The fleet's management graphs and their versions. Read and written by operators." .
+varve:EventCatalogue a deed:State ; rdfs:comment "A dataset's own event catalogue graphs. Written by the move to the management plane." .
+varve:FleetState a deed:State ; rdfs:comment "Which instance holds which dataset's writer, and whether it answers ready. Read by operators." .
+varve:HostConfiguration a deed:State ; rdfs:comment "The configuration files, environment and command line a server starts from. Read by whoever starts it." .
+
+# ================================================================ failures
+
+# of contexts
+varve:NotADataset a deed:Failure ; deed:name "not-a-dataset" ; rdfs:comment "The place named holds no dataset. Check the address, or create one." .
+varve:DatasetLeased a deed:Failure ; deed:name "dataset-leased" ; rdfs:comment "Another process holds the dataset. Stop it, or go through the server that holds it; `lease` shows the holder." .
+varve:WriterSuperseded a deed:Failure ; deed:name "writer-superseded" ; rdfs:comment "Another writer took the dataset over while this one worked. Look again and retry." .
+varve:StorageUnavailable a deed:Failure ; deed:name "storage-unavailable" ; rdfs:comment "The storage could not be read or written, or refused this identity. Fix access and retry." .
+varve:ServerUnreachable a deed:Failure ; deed:name "server-unreachable" ; rdfs:comment "No answer from the server. Check the address and retry." .
+varve:ServerRefused a deed:Failure ; deed:name "server-refused" ; rdfs:comment "The server answered with a problem: not authenticated, not permitted, not found, or its own refusal. The problem document says which." .
+varve:StoreAddressIncomplete a deed:Failure ; deed:name "store-address-incomplete" ; rdfs:comment "The object-store address names no dataset, or lacks the endpoint and region it needs. Complete it." .
+varve:UnannouncedNotObjectStore a deed:Failure ; deed:name "unannounced-not-object-store" ; rdfs:comment "Reading unannounced was asked of a dataset that is not in an object store. Drop it." .
+varve:CredentialIncomplete a deed:Failure ; deed:name "credential-incomplete" ; rdfs:comment "An issuer was named without a client, or a client without an issuer or a way to prove itself. Give both." .
+varve:CredentialFileUnusable a deed:Failure ; deed:name "credential-file-unusable" ; rdfs:comment "The credential file is readable by others or is not one this user can read. Fix its mode or delete it and sign in again." .
+varve:IdentityUnavailable a deed:Failure ; deed:name "identity-unavailable" ; rdfs:comment "The platform gave no identity token: not run where one exists, or the endpoint refused. Give the workload an identity." .
+varve:ServerNotNamed a deed:Failure ; deed:name "server-not-named" ; rdfs:comment "No server was named. Name any instance of the fleet." .
+varve:NoStandbyAnswered a deed:Failure ; deed:name "no-standby-answered" ; rdfs:comment "None of the instances named answered. Name ones that are running." .
+varve:ConfigurationInvalid a deed:Failure ; deed:name "configuration-invalid" ; cli:exitCode 2 ; rdfs:comment "The configuration does not validate, or has an unknown key. Fix it; nothing started." .
+
+# of acts
+varve:DatasetExists a deed:Failure ; deed:name "dataset-exists" ; rdfs:comment "The directory already holds a dataset. Use it, or choose another directory." .
+varve:NothingToLoad a deed:Failure ; deed:name "nothing-to-load" ; rdfs:comment "No document was named. Name at least one." .
+varve:SyntaxUnknown a deed:Failure ; deed:name "syntax-unknown" ; rdfs:comment "A document's syntax could not be told. Name it .nt, .nq, .ttl or .trig." .
+varve:DoesNotParse a deed:Failure ; deed:name "does-not-parse" ; rdfs:comment "A document, query or update is not well formed. Nothing was done; fix the place the message names." .
+varve:LoadSpillDamaged a deed:Failure ; deed:name "load-spill-damaged" ; rdfs:comment "The load's temporary data was damaged. Nothing was committed; submit the same input again (ADR 0213)." .
+varve:CommitRefused a deed:Failure ; deed:name "commit-refused" ; rdfs:comment "The commit was rejected by a validator or the dataset is unavailable. Nothing was committed; the reason says which." .
+varve:Conflict a deed:Failure ; deed:name "conflict" ; rdfs:comment "Another commit came first: the dataset is not at the position expected. Read the head and decide again." .
+varve:OperationFailed a deed:Failure ; deed:name "operation-failed" ; rdfs:comment "An operation of the update failed. Nothing was committed." .
+varve:NoCommitThere a deed:Failure ; deed:name "no-commit-there" ; rdfs:comment "The position or time named is before the first commit or after the head. The message gives the head." .
+varve:NeedsServer a deed:Failure ; deed:name "needs-server" ; rdfs:comment "This was asked of a dataset opened in place and only a server can answer it. Name the dataset by URL." .
+varve:NeedsLocal a deed:Failure ; deed:name "needs-local" ; rdfs:comment "This was asked of a server and only a dataset opened in place can answer it." .
+varve:RangeInvalid a deed:Failure ; deed:name "range-invalid" ; rdfs:comment "The end is after the head, or an end was given with follow. Give one or the other, within the feed." .
+varve:SetupOutsideSubset a deed:Failure ; deed:name "setup-outside-subset" ; cli:exitCode 2 ; rdfs:comment "The setup file uses YAML outside the specified subset. Fix the file." .
+varve:SetupRefused a deed:Failure ; deed:name "setup-refused" ; rdfs:comment "The server refused a step of the setup, often for a permission the caller lacks. What was applied before it stays; fix and apply again." .
+varve:DeclarationInvalid a deed:Failure ; deed:name "declaration-invalid" ; rdfs:comment "A declaration is outside a named graph, names a graph that is not a management graph, or shares a graph with another file. One file owns a graph, whole." .
+varve:GraphMoved a deed:Failure ; deed:name "graph-moved" ; rdfs:comment "An owned graph changed since the plan read it. Plan again." .
+varve:NotAPlan a deed:Failure ; deed:name "not-a-plan" ; rdfs:comment "The document is not a saved plan. Save one with plan." .
+varve:NotConvertible a deed:Failure ; deed:name "not-convertible" ; rdfs:comment "The configuration holds something the declarations cannot say. The message lists each; fix the configuration." .
+varve:MoveRefused a deed:Failure ; deed:name "move-refused" ; rdfs:comment "The server refused the move after retries. The move is resumable: send it again once the cause is fixed." .
+varve:NotTakenOver a deed:Failure ; deed:name "not-taken-over" ; rdfs:comment "At least one dataset was not taken over: every standby refused. The message lists why; a later trigger is safe." .
+varve:LockHeld a deed:Failure ; deed:name "lock-held" ; rdfs:comment "The lock is held by a live process. A held lock is never broken; stop the holder." .
+varve:NoLockHere a deed:Failure ; deed:name "no-lock-here" ; rdfs:comment "This kind of storage has no lock to break, or no epoch to take. Use the act that fits the storage." .
+varve:EpochMoved a deed:Failure ; deed:name "epoch-moved" ; rdfs:comment "The writer record no longer shows the epoch named. Nothing was taken; look again." .
+varve:ReaderInvalid a deed:Failure ; deed:name "reader-invalid" ; rdfs:comment "The reader id or its interval is not as list shows it. List again and copy them." .
+varve:ReaderChanged a deed:Failure ; deed:name "reader-changed" ; rdfs:comment "The reader record is gone or announces other versions now. Nothing was forgotten; it may be alive: list again." .
+varve:NotAnObjectStore a deed:Failure ; deed:name "not-an-object-store" ; rdfs:comment "The address is not a dataset in an object store." .
+
+# ================================================== settings and contexts
+
+varve:dataset a deed:Setting ; deed:name "dataset" ; deed:datatype xsd:string ; cli:bindAs cli:Operand ;
+    rdfs:comment "Where the dataset is: a directory, the URL of one on a server, or an address in an object store." .
+varve:unannounced a deed:Setting ; deed:name "unannounced" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Object store: read without a reader record, for an identity that may only read (ADR 0160)." .
+varve:endpoint a deed:Setting ; deed:name "endpoint" ; deed:datatype xsd:anyURI ;
+    rdfs:comment "The S3-compatible service's endpoint." .
+varve:region a deed:Setting ; deed:name "region" ; deed:datatype xsd:string ;
+    rdfs:comment "The region an S3 signature is for." .
+varve:stsEndpoint a deed:Setting ; deed:name "sts-endpoint" ; deed:datatype xsd:anyURI ;
+    rdfs:comment "The STS endpoint web identity is exchanged at; Amazon's when absent." .
+varve:allowEndpoint a deed:Setting ; deed:name "allow-endpoint" ; deed:datatype xsd:anyURI ; deed:repeatable true ;
+    rdfs:comment "An IRI prefix SERVICE may reach from a dataset opened in place; none by default." .
+varve:allowSource a deed:Setting ; deed:name "allow-source" ; deed:datatype xsd:anyURI ; deed:repeatable true ;
+    rdfs:comment "An IRI prefix LOAD may fetch from for a dataset opened in place; none by default." .
+varve:allowPrivateAddresses a deed:Setting ; deed:name "allow-private-addresses" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Let SERVICE and LOAD reach loopback and private addresses." .
+varve:authority a deed:Setting ; deed:name "authority" ; deed:datatype xsd:anyURI ;
+    rdfs:comment "The OIDC issuer tokens come from." .
+varve:clientId a deed:Setting ; deed:name "client-id" ; deed:datatype xsd:string ;
+    rdfs:comment "The OIDC client." .
+varve:clientSecret a deed:Setting ; deed:name "client-secret" ; deed:datatype xsd:string ; cli:env "VARVE_CLIENT_SECRET" ;
+    rdfs:comment "The client's secret." .
+varve:scope a deed:Setting ; deed:name "scope" ; deed:datatype xsd:string ;
+    rdfs:comment "The scope to ask the issuer for." .
+varve:token a deed:Setting ; deed:name "token" ; deed:datatype xsd:string ; cli:env "VARVE_TOKEN" ;
+    rdfs:comment "A bearer token obtained elsewhere. Nothing is stored." .
+varve:noStore a deed:Setting ; deed:name "no-store" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Keep no refresh token on disk: for CI and shared machines." .
+varve:credentials a deed:Setting ; deed:name "credentials" ; deed:datatype xsd:string ;
+    rdfs:comment "The credential file; under the user's profile by default." .
+varve:clientAssertion a deed:Setting ; deed:name "client-assertion" ; deed:datatype xsd:string ;
+    rdfs:comment "Workload identity federation: a file holding the platform's token, or github." .
+varve:assertionAudience a deed:Setting ; deed:name "assertion-audience" ; deed:datatype xsd:string ;
+    rdfs:comment "The audience GitHub Actions' token is asked for." .
+varve:managedIdentity a deed:Setting ; deed:name "managed-identity" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Take the token from the platform's managed identity, for the audience scope names." .
+varve:server a deed:Setting ; deed:name "server" ; deed:datatype xsd:anyURI ;
+    rdfs:comment "The address of any instance of the fleet; its /manage/ resources are used." .
+varve:standby a deed:Setting ; deed:name "standby" ; cli:name "server" ; deed:datatype xsd:anyURI ; deed:repeatable true ;
+    rdfs:comment "An instance that may take a writer over, by its address, in order of preference." .
+
+varve:DatasetTarget a deed:Context ;
+    rdfs:comment "The dataset the acts of a session are about, fixed for the session." ;
+    deed:setting varve:dataset ;
+    deed:failure varve:NotADataset , varve:DatasetLeased , varve:WriterSuperseded , varve:StorageUnavailable , varve:ServerUnreachable , varve:ServerRefused .
+varve:ObjectStoreAccess a deed:Context ;
+    rdfs:comment "How an object store is reached, as the workload's own identity (ADR 0137)." ;
+    deed:setting varve:endpoint , varve:region , varve:stsEndpoint ;
+    deed:failure varve:StoreAddressIncomplete .
+varve:Announcement a deed:Context ;
+    rdfs:comment "Whether a read of an object store announces itself (ADR 0160)." ;
+    deed:setting varve:unannounced ;
+    deed:failure varve:UnannouncedNotObjectStore .
+varve:OutboundPolicy a deed:Context ;
+    rdfs:comment "What a dataset opened in place may reach over the network (ADR 0104)." ;
+    deed:setting varve:allowEndpoint , varve:allowSource , varve:allowPrivateAddresses ;
+    deed:failure deed:Nothing .
+varve:DataCredential a deed:Context ;
+    rdfs:comment "How a token for a server's data plane is obtained (ADRs 0105, 0127)." ;
+    deed:setting varve:authority , varve:clientId , varve:clientSecret , varve:scope , varve:token , varve:noStore , varve:credentials ;
+    deed:failure varve:CredentialIncomplete , varve:CredentialFileUnusable .
+varve:ManagementServer a deed:Context ;
+    rdfs:comment "The fleet whose management plane the acts of a session are about." ;
+    deed:setting varve:server ;
+    deed:failure varve:ServerNotNamed , varve:ServerUnreachable , varve:ServerRefused .
+varve:ManagementCredential a deed:Context ;
+    rdfs:comment "How a token for the management audience is obtained, unattended (ADR 0163 point 5)." ;
+    deed:setting varve:token , varve:authority , varve:clientId , varve:clientSecret , varve:clientAssertion , varve:assertionAudience , varve:scope ;
+    deed:failure varve:CredentialIncomplete , varve:IdentityUnavailable .
+varve:ManagedIdentity a deed:Context ;
+    rdfs:comment "The platform's managed identity as the source of the operator token (ADR 0181 point 3)." ;
+    deed:setting varve:managedIdentity ;
+    deed:failure varve:IdentityUnavailable .
+varve:Standbys a deed:Context ;
+    rdfs:comment "The instances a writer may be moved to." ;
+    deed:setting varve:standby ;
+    deed:failure varve:NoStandbyAnswered , varve:ServerUnreachable .
+
+# ============================================================== parameters
+
+varve:directory a deed:Parameter ; deed:name "directory" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The directory to create the dataset in; made if missing." .
+varve:files a deed:Parameter ; deed:name "files" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ; deed:repeatable true ;
+    rdfs:comment "RDF documents: N-Triples, N-Quads, Turtle or TriG." .
+varve:graph a deed:Parameter ; deed:name "graph" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "One named graph, by its IRI, or `default`. Without it, every graph." .
+varve:memory a deed:Parameter ; deed:name "memory" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "MiB the act may hold in memory; 256 when absent." .
+varve:workers a deed:Parameter ; deed:name "workers" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "Threads that work beside the parser; the processor count less one when absent." .
+varve:queryText a deed:Parameter ; deed:name "query" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    cli:bindAs cli:Option ; cli:short "q" ; cli:fileAlternative "file" ;
+    rdfs:comment "The SPARQL query." .
+varve:updateText a deed:Parameter ; deed:name "update" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    cli:bindAs cli:Option ; cli:short "u" ; cli:fileAlternative "file" ;
+    rdfs:comment "The SPARQL Update request." .
+varve:asOf a deed:Parameter ; deed:name "as-of" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "Read the past: position:<n> or time:<RFC 3339>. The head when absent." .
+varve:entailment a deed:Parameter ; deed:name "entailment" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required false ;
+    rdfs:comment "The regime to answer under: simple, rdf, rdfs or d. The dataset's default when absent (ADR 0192)." .
+varve:ifMatch a deed:Parameter ; deed:name "if-match" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "The position the actor last saw. The act is refused with a conflict if the dataset has moved; unconditional when absent." .
+varve:at a deed:Parameter ; deed:name "at" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "The position to act at; the head when absent." .
+varve:from a deed:Parameter ; deed:name "from" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "Start after this position; the beginning when absent." .
+varve:to a deed:Parameter ; deed:name "to" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required false ;
+    rdfs:comment "End at this position; the head when absent." .
+varve:follow a deed:Parameter ; deed:name "follow" ; deed:role deed:Modifier ; deed:datatype xsd:boolean ; deed:required false ;
+    rdfs:comment "Keep going after the head, until stopped." .
+varve:setupDocument a deed:Parameter ; deed:name "setup" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ;
+    rdfs:comment "The setup file: the YAML subset docs/operator/datasets.md specifies." .
+varve:declarations a deed:Parameter ; deed:name "declarations" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ; deed:repeatable true ;
+    rdfs:comment "TriG documents of management declarations; each owns, whole, every graph it names." .
+varve:savedPlan a deed:Parameter ; deed:name "saved-plan" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ;
+    rdfs:comment "A plan saved earlier." .
+varve:configurationDocument a deed:Parameter ; deed:name "configuration" ; deed:role deed:Subject ; deed:datatype deed:Document ; deed:required true ;
+    rdfs:comment "A configuration file whose Varve:Datasets and Varve:Auth:Datasets are to become declarations." .
+varve:datasetName a deed:Parameter ; deed:name "dataset-name" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "A dataset, by its name on the server." .
+varve:datasetNames a deed:Parameter ; deed:name "dataset-names" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required false ; deed:repeatable true ;
+    rdfs:comment "Datasets by name, _fleet for the system dataset; every dataset the failed instance holds when absent." .
+varve:failedInstance a deed:Parameter ; deed:name "failed-instance" ; cli:name "from" ; deed:role deed:Modifier ; deed:datatype xsd:string ; deed:required true ;
+    rdfs:comment "The instance found failed. Only an epoch it still holds is taken over, so a late trigger does nothing." .
+varve:epoch a deed:Parameter ; deed:name "epoch" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required true ;
+    rdfs:comment "The epoch the actor last saw, as lease shows it. The act is refused if the record has moved on." .
+varve:reader a deed:Parameter ; deed:name "reader" ; deed:role deed:Subject ; deed:datatype xsd:string ; deed:required true ;
+    cli:bindAs cli:Option ;
+    rdfs:comment "The reader id, as list shows it." .
+varve:oldest a deed:Parameter ; deed:name "oldest" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required true ;
+    rdfs:comment "The oldest catalog version the record announced when the actor last saw it." .
+varve:newest a deed:Parameter ; deed:name "newest" ; deed:role deed:Modifier ; deed:datatype xsd:integer ; deed:required true ;
+    rdfs:comment "The newest catalog version the record announced when the actor last saw it." .
+
+# CLI-only options
+varve:format a cli:SurfaceOption ; deed:name "format" ; cli:short "f" ; deed:datatype xsd:string ;
+    rdfs:comment "The syntax the outcome is written in. REST negotiates it; MCP returns structure." .
+varve:out a cli:SurfaceOption ; deed:name "out" ; deed:datatype xsd:string ;
+    rdfs:comment "A file to save the outcome to as well. Another surface returns the outcome and the caller keeps it." .
+varve:exitCodeFlag a cli:SurfaceOption ; deed:name "exit-code" ; deed:datatype xsd:boolean ;
+    rdfs:comment "Signal a non-empty plan by exit code 2, for scripts. Another surface reads the outcome." .
+
+# ==================================================================== acts
+# Outcome kinds are named, not yet described.
+
+# ---- the first two
+
+varve:ShowStatus a deed:Act ;
+    rdfs:comment "Give a dataset's status." ;
+    deed:resource varve:Status ; deed:verb varve:show ;
+    deed:actor varve:Reader , varve:Custodian ;
+    deed:input deed:Nothing ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Log , varve:Checkpoints , varve:Settings ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:DatasetStatus ] ;
+    deed:failure deed:Nothing .
+
+varve:QueryDataset a deed:Act ;
+    rdfs:comment "Evaluate a SPARQL query over a dataset." ;
+    deed:resource varve:Dataset ; deed:verb varve:query ;
+    deed:actor varve:Reader , varve:Custodian ;
+    deed:input ( varve:queryText varve:asOf varve:entailment ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Data ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields varve:QueryResult ] ;
+    deed:failure varve:DoesNotParse , varve:NoCommitThere , varve:NeedsServer ;
+    cli:surfaceOption varve:format .
+
+# ---- the rest of the dataset
+
+varve:CreateDataset a deed:Act ;
+    rdfs:comment "Create a dataset in a directory that holds none." ;
+    deed:resource varve:Dataset ; deed:verb varve:create ;
+    deed:actor varve:Custodian ;
+    deed:input ( varve:directory ) ;
+    deed:context deed:Nothing ;
+    deed:needs deed:Nothing ;
+    deed:changes [ deed:state varve:Log ; deed:manner deed:Creates ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:DatasetCreated ] ;
+    deed:failure varve:DatasetExists , varve:StorageUnavailable .
+
+varve:LoadDataset a deed:Act ;
+    rdfs:comment "Bulk-load documents into a dataset opened in place, as one commit (ADR 0081)." ;
+    deed:resource varve:Dataset ; deed:verb varve:load ;
+    deed:actor varve:Custodian ;
+    deed:input ( varve:files varve:graph varve:memory varve:workers ) ;
+    deed:context varve:DatasetTarget ;
+    deed:needs deed:Nothing ;
+    deed:changes [ deed:state varve:Log ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:CommitResult ] ;
+    deed:failure varve:NothingToLoad , varve:SyntaxUnknown , varve:DoesNotParse , varve:LoadSpillDamaged , varve:CommitRefused .
+
+varve:UpdateDataset a deed:Act ;
+    rdfs:comment "Execute a SPARQL Update request against a dataset as one commit, or none." ;
+    deed:resource varve:Dataset ; deed:verb varve:update ;
+    deed:actor varve:Writer , varve:Custodian ;
+    deed:input ( varve:updateText varve:ifMatch ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Data ;
+    deed:changes [ deed:state varve:Log ; deed:manner deed:Appends ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:CommitResult ] ;
+    deed:failure varve:DoesNotParse , varve:OperationFailed , varve:Conflict , varve:CommitRefused .
+
+varve:ExportDataset a deed:Act ;
+    rdfs:comment "Give every quad of a dataset, or of one of its graphs." ;
+    deed:resource varve:Dataset ; deed:verb varve:export ;
+    deed:actor varve:Reader , varve:Custodian ;
+    deed:input ( varve:graph varve:asOf ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Data ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields varve:Quad ] ;
+    deed:failure varve:NoCommitThere , varve:NeedsLocal ;
+    cli:surfaceOption varve:format .
+
+varve:CheckpointDataset a deed:Act ;
+    rdfs:comment "Take a checkpoint of a dataset at the head, or at a position (ADR 0078)." ;
+    deed:resource varve:Dataset ; deed:verb varve:checkpoint ;
+    deed:actor varve:DatasetAdmin , varve:Custodian ;
+    deed:input ( varve:at ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Log ;
+    deed:changes [ deed:state varve:Checkpoints ; deed:manner deed:Creates ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:CheckpointTaken ] ;
+    deed:failure varve:NoCommitThere .
+
+varve:ShowFeed a deed:Act ;
+    rdfs:comment "Give a dataset's commits in order, to a position or without end." ;
+    deed:resource varve:Feed ; deed:verb varve:show ;
+    deed:actor varve:Reader , varve:Custodian ;
+    deed:input ( varve:from varve:to varve:graph varve:follow ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Log ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields varve:Commit ] ;
+    deed:failure varve:RangeInvalid .
+
+# ---- multi-step
+
+varve:ApplySetup a deed:Act ;
+    rdfs:comment "Make a dataset on a server what a setup file declares: that it exists, its settings, its baseline and its migrations. Applying again commits nothing (ADR 0130). The role needed depends on what is missing: operator to create the dataset, dataset admin for its settings." ;
+    deed:resource varve:Setup ; deed:verb varve:apply ;
+    deed:actor varve:DatasetAdmin , varve:Operator ;
+    deed:input ( varve:setupDocument ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess , varve:Announcement , varve:OutboundPolicy , varve:DataCredential ;
+    deed:needs varve:Existence , varve:Settings , varve:Data ;
+    deed:changes [ deed:state varve:Existence ; deed:manner deed:Converges ] ,
+                 [ deed:state varve:Settings ; deed:manner deed:Converges ] ,
+                 [ deed:state varve:Log ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:SetupResult ] ;
+    deed:failure varve:SetupOutsideSubset , varve:NeedsServer , varve:SetupRefused .
+
+varve:PlanDeclarations a deed:Act ;
+    rdfs:comment "Say what applying management declarations to a fleet would change." ;
+    deed:resource varve:Declaration ; deed:verb varve:plan ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:declarations ) ;
+    deed:context varve:ManagementServer , varve:ManagementCredential ;
+    deed:needs varve:ManagementGraphs ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:ManagementPlan ] ;
+    deed:failure varve:DoesNotParse , varve:DeclarationInvalid ;
+    cli:surfaceOption varve:out , varve:exitCodeFlag ;
+    cli:spelledAs "apply <files...> --plan" .
+
+varve:ApplyDeclarations a deed:Act ;
+    rdfs:comment "Make a fleet's management graphs what the declarations say: planned, then committed as one replacement of each graph under the versions the plan read (ADR 0163)." ;
+    deed:resource varve:Declaration ; deed:verb varve:apply ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:declarations ) ;
+    deed:context varve:ManagementServer , varve:ManagementCredential ;
+    deed:needs varve:ManagementGraphs ;
+    deed:changes [ deed:state varve:ManagementGraphs ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:ApplyResult ] ;
+    deed:failure varve:DoesNotParse , varve:DeclarationInvalid , varve:GraphMoved ;
+    cli:surfaceOption varve:out ;
+    cli:spelledAs "apply <files...>" .
+
+varve:ApplyPlan a deed:Act ;
+    rdfs:comment "Commit a plan saved earlier, refused when a graph it owns has moved since." ;
+    deed:resource varve:Plan ; deed:verb varve:apply ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:savedPlan ) ;
+    deed:context varve:ManagementServer , varve:ManagementCredential ;
+    deed:needs deed:Nothing ;
+    deed:changes [ deed:state varve:ManagementGraphs ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:ApplyResult ] ;
+    deed:failure varve:NotAPlan , varve:GraphMoved ;
+    cli:spelledAs "apply --from-plan <file>" .
+
+varve:ConvertConfiguration a deed:Act ;
+    rdfs:comment "Give the declarations that replace a configuration file's datasets and grants. Reaches no server." ;
+    deed:resource varve:Configuration ; deed:verb varve:convert ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:configurationDocument ) ;
+    deed:context deed:Nothing ;
+    deed:needs deed:Nothing ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:DeclarationDocument ] ;
+    deed:failure varve:NotConvertible ;
+    cli:spelledAs "apply --from-config <file>" .
+
+varve:ShowConfiguration a deed:Act ;
+    rdfs:comment "Give the effective configuration a server would start with, secrets redacted, and validate it." ;
+    deed:resource varve:Configuration ; deed:verb varve:show ;
+    deed:actor varve:Operator ;
+    deed:input deed:Nothing ;
+    deed:context varve:ServerConfiguration ;
+    deed:needs varve:HostConfiguration ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:EffectiveConfiguration ] ;
+    deed:failure deed:Nothing ;
+    cli:spelledAs "serve --print-config" .
+
+# ---- the management plane
+
+varve:MoveEventDeclarations a deed:Act ;
+    rdfs:comment "Move a dataset's event declarations from its catalogue graphs to the management plane. Resumable: sent again, it finishes (ADR 0167)." ;
+    deed:resource varve:EventDeclaration ; deed:verb varve:move ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:datasetName ) ;
+    deed:context varve:ManagementServer , varve:ManagementCredential ;
+    deed:needs varve:EventCatalogue ;
+    deed:changes [ deed:state varve:EventCatalogue ; deed:manner deed:Converges ] ,
+                 [ deed:state varve:ManagementGraphs ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:MoveResult ] ;
+    deed:failure varve:MoveRefused ;
+    cli:spelledAs "manage move-events <dataset>" .
+
+varve:TakeOverWriter a deed:Act ;
+    rdfs:comment "Move the writer of the datasets a failed instance holds to a warm standby. A late or repeated trigger does nothing (ADRs 0179, 0181)." ;
+    deed:resource varve:Writer_ ; deed:verb varve:takeover ;
+    deed:actor varve:Operator ;
+    deed:input ( varve:datasetNames varve:failedInstance ) ;
+    deed:context varve:Standbys , varve:ManagementCredential , varve:ManagedIdentity ;
+    deed:needs varve:FleetState , varve:WriterRecord ;
+    deed:changes [ deed:state varve:WriterRecord ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:TakeoverResult ] ;
+    deed:failure varve:NotTakenOver ;
+    cli:spelledAs "manage takeover [<dataset>...]" .
+
+# ---- noun-verb groups
+
+varve:ShowLease a deed:Act ;
+    rdfs:comment "Say who holds a dataset where it is stored: a directory's owner and whether its lock is held, or an object store's writer record." ;
+    deed:resource varve:Lease ; deed:verb varve:show ;
+    deed:actor varve:Custodian ;
+    deed:input deed:Nothing ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:LeaseLock , varve:WriterRecord ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:LeaseStatus ] ;
+    deed:failure varve:LockHeld .
+
+varve:BreakLease a deed:Act ;
+    rdfs:comment "Clear the owner file of a directory's lock that proves free. A held lock is never broken (ADR 0116)." ;
+    deed:resource varve:Lease ; deed:verb varve:break ;
+    deed:actor varve:Custodian ;
+    deed:input deed:Nothing ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:LeaseLock ;
+    deed:changes [ deed:state varve:LeaseLock ; deed:manner deed:Removes ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:LeaseStatus ] ;
+    deed:failure varve:LockHeld , varve:NoLockHere ;
+    cli:spelledAs "lease <dataset> --break" .
+
+varve:TakeOverLease a deed:Act ;
+    rdfs:comment "Take an object-store dataset's writer epoch over from the epoch named: the next epoch claimed, the log fenced, and released for the next writer (ADR 0136)." ;
+    deed:resource varve:Lease ; deed:verb varve:takeover ;
+    deed:actor varve:Custodian ;
+    deed:input ( varve:epoch ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:WriterRecord ;
+    deed:changes [ deed:state varve:WriterRecord ; deed:manner deed:Converges ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:LeaseStatus ] ;
+    deed:failure varve:EpochMoved , varve:NoLockHere ;
+    cli:spelledAs "lease <dataset> --take --epoch <n>" .
+
+varve:ShowStorage a deed:Act ;
+    rdfs:comment "Report a dataset in an object store as its objects show it: its catalog, extent sets, what is retained for readers, and its reader records (ADR 0162)." ;
+    deed:resource varve:Storage ; deed:verb varve:show ;
+    deed:actor varve:Custodian ;
+    deed:input deed:Nothing ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:Extents , varve:ReaderRecords ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Single ; deed:yields varve:StorageReport ] ;
+    deed:failure varve:NotAnObjectStore .
+
+varve:ListReaders a deed:Act ;
+    rdfs:comment "Give every reader record, the versions it announces and what it holds back from deletion." ;
+    deed:resource varve:ReaderRecord ; deed:verb varve:list ;
+    deed:actor varve:Custodian ;
+    deed:input deed:Nothing ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:ReaderRecords , varve:Extents ;
+    deed:changes deed:Nothing ;
+    deed:outcome [ a deed:Stream ; deed:yields varve:ReaderHolding ] ;
+    deed:failure varve:NotAnObjectStore .
+
+varve:ForgetReader a deed:Act ;
+    rdfs:comment "Forget a reader that is gone, so the writer may delete what its record held. Only while the record still announces what the actor saw (ADR 0160)." ;
+    deed:resource varve:ReaderRecord ; deed:verb varve:forget ;
+    deed:actor varve:Custodian ;
+    deed:input ( varve:reader varve:oldest varve:newest ) ;
+    deed:context varve:DatasetTarget , varve:ObjectStoreAccess ;
+    deed:needs varve:ReaderRecords ;
+    deed:changes [ deed:state varve:ReaderRecords ; deed:manner deed:Removes ] ;
+    deed:outcome [ a deed:Single ; deed:yields varve:ReaderForgotten ] ;
+    deed:failure varve:ReaderInvalid , varve:ReaderChanged , varve:NotAnObjectStore .
+
+# =================================================================== hosts
+# Not acts (ADR 0003).
+
+varve:datasetsRoot a deed:Setting ; deed:name "datasets-root" ; deed:datatype xsd:string ; rdfs:comment "The directory file datasets live under." .
+varve:recordBootstrap a deed:Setting ; deed:name "record-bootstrap" ; deed:datatype xsd:boolean ; rdfs:comment "At start, record the configured bootstrap operators as a system commit (ADR 0163 point 7)." .
+varve:authMode a deed:Setting ; deed:name "auth-mode" ; deed:datatype xsd:string ; rdfs:comment "Oidc or Anonymous." .
+varve:anonymous a deed:Setting ; deed:name "anonymous" ; deed:datatype xsd:boolean ; rdfs:comment "Anonymous mode: development only (ADR 0037)." .
+varve:audience a deed:Setting ; deed:name "audience" ; deed:datatype xsd:string ; deed:repeatable true ; rdfs:comment "An audience a token may carry." .
+varve:urls a deed:Setting ; deed:name "urls" ; deed:datatype xsd:string ; rdfs:comment "What to listen on." .
+varve:config a deed:Setting ; deed:name "config" ; deed:datatype xsd:string ; deed:repeatable true ; rdfs:comment "A configuration file, read below the environment and the command line." .
+varve:set a deed:Setting ; deed:name "set" ; deed:datatype xsd:string ; deed:repeatable true ; rdfs:comment "Any setting as Key=Value." .
+varve:ServerConfiguration a deed:Context ;
+    rdfs:comment "What a server starts from (ADR 0115)." ;
+    deed:setting varve:datasetsRoot , varve:recordBootstrap , varve:authMode , varve:anonymous , varve:authority , varve:audience , varve:urls , varve:config , varve:set ;
+    deed:failure varve:ConfigurationInvalid .
+
+varve:selector a deed:Setting ; deed:name "selector" ; deed:datatype xsd:string ; rdfs:comment "The label selector of the fleet's pods." .
+varve:address a deed:Setting ; deed:name "address" ; deed:datatype xsd:string ; rdfs:comment "A pod's address, with {pod} for its name." .
+varve:namespace a deed:Setting ; deed:name "namespace" ; deed:datatype xsd:string ; rdfs:comment "The pods' namespace; the service account's own when absent." .
+varve:kubernetesApi a deed:Setting ; deed:name "kubernetes-api" ; deed:datatype xsd:anyURI ; rdfs:comment "The API server; the in-cluster one when absent." .
+varve:kubernetesToken a deed:Setting ; deed:name "kubernetes-token" ; deed:datatype xsd:string ; rdfs:comment "The file holding the token for the API server; the service account's when absent." .
+varve:kubernetesCa a deed:Setting ; deed:name "kubernetes-ca" ; deed:datatype xsd:string ; rdfs:comment "The API server's certificate authority; the service account's when absent." .
+varve:KubernetesFleet a deed:Context ;
+    rdfs:comment "The pods of a fleet, as the Kubernetes API shows them." ;
+    deed:setting varve:selector , varve:address , varve:namespace , varve:kubernetesApi , varve:kubernetesToken , varve:kubernetesCa ;
+    deed:failure varve:IdentityUnavailable .
+
+varve:Serve a cli:Host ; deed:name "serve" ;
+    rdfs:comment "Run the server until stopped (ADRs 0101, 0115). A bare `varve` runs it too." ;
+    deed:context varve:ServerConfiguration .
+
+varve:WatchKubernetes a cli:Host ; deed:name "watch-kubernetes" ;
+    rdfs:comment "Watch a fleet's pods until stopped and take over from each that turns not ready (ADR 0181 point 8)." ;
+    deed:context varve:KubernetesFleet , varve:ManagementCredential , varve:ManagedIdentity ;
+    cli:performs varve:TakeOverWriter ;
+    cli:spelledAs "manage watch-kubernetes" .

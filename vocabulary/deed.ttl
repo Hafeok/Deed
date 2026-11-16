@@ -1,0 +1,197 @@
+# Deed: the act layer.
+# Draft 1, 2026-11-15. Status: working draft; nothing here is decided beyond
+# the project's Decided list. The namespace IRI is a proposal (findings, Q1).
+#
+# An act is what a tool can do, described without reference to any surface.
+# Every surface (CLI, MCP, REST) is generated from this layer. No term here
+# may name an option, a flag, an exit code, a media type, a path or a method.
+#
+# Every term below is used by at least one act in varve-acts.ttl.
+
+@prefix deed: <https://w3id.org/deed/ns#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/deed/ns> a owl:Ontology ;
+    rdfs:label "Deed act vocabulary" ;
+    owl:versionInfo "0.1.0-draft.1" .
+
+# ---------------------------------------------------------------- the act
+
+deed:Act a rdfs:Class ;
+    rdfs:label "Act" ;
+    rdfs:comment "One thing an actor can do to a resource. An act has exactly one resource, one verb and one outcome, and states all seven facets: actor, input, context, needs, changes, outcome, failures. A facet with nothing in it says deed:Nothing." .
+
+deed:resource a rdf:Property ;
+    rdfs:domain deed:Act ; rdfs:range deed:Resource ;
+    rdfs:comment "The thing the act is about." .
+
+deed:verb a rdf:Property ;
+    rdfs:domain deed:Act ; rdfs:range deed:Verb ;
+    rdfs:comment "What the act does to its resource." .
+
+deed:Resource a rdfs:Class ;
+    rdfs:label "Resource" ;
+    rdfs:comment "A noun of the tool's domain that acts are about. Named once, in the singular." .
+
+deed:within a rdf:Property ;
+    rdfs:domain deed:Resource ; rdfs:range deed:Resource ;
+    rdfs:comment "The resource this one is a part of. The chain of deed:within, outermost first, is the resource path. (Needed by Varve's reader records, which are part of a dataset's storage.)" .
+
+deed:Verb a rdfs:Class ;
+    rdfs:label "Verb" ;
+    rdfs:comment "A verb from the controlled list. A verb means the same thing on every resource it is used with." .
+
+deed:name a rdf:Property ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The one token a resource, verb, parameter, setting or failure is known by on every surface: lower case, words joined by hyphens. Each surface applies its own casing rule to it." .
+
+# ---------------------------------------------------------------- 1. actor
+
+deed:actor a rdf:Property ;
+    rdfs:domain deed:Act ; rdfs:range deed:Actor ;
+    rdfs:comment "A role that may perform the act. Several values mean any one of them suffices." .
+
+deed:Actor a rdfs:Class ;
+    rdfs:label "Actor" ;
+    rdfs:comment "A role. Never an identity (a person, an application, a service account) and never a surface (the CLI, an agent). Whoever holds the role may perform the act, through any surface." .
+
+# ---------------------------------------------------------------- 2. input
+
+deed:input a rdf:Property ;
+    rdfs:domain deed:Act ;
+    rdfs:comment "What the actor supplies: an RDF list of parameters in declared order, or deed:Nothing. The order is significant for subjects only." .
+
+deed:Parameter a rdfs:Class ;
+    rdfs:label "Parameter" ;
+    rdfs:comment "One thing an actor supplies. Defined once for the whole tool and reused, so that a name means one thing in every act that takes it." .
+
+deed:role a rdf:Property ;
+    rdfs:domain deed:Parameter ;
+    rdfs:comment "deed:Subject or deed:Modifier. Fixed for the parameter, not chosen per act." .
+
+deed:Subject a deed:ParameterRole ;
+    rdfs:label "subject" ;
+    rdfs:comment "What the act is performed on or with. Without it the act has nothing to do." .
+
+deed:Modifier a deed:ParameterRole ;
+    rdfs:label "modifier" ;
+    rdfs:comment "How the act is performed. Without it the act still has its object." .
+
+deed:ParameterRole a rdfs:Class .
+
+deed:datatype a rdf:Property ;
+    rdfs:comment "The value space of a parameter or setting: an XSD datatype, or deed:Document." .
+
+deed:Document a rdfs:Datatype ;
+    rdfs:label "document" ;
+    rdfs:comment "Content supplied whole: an RDF file, a setup file, a saved plan. The act layer says only that the value is content. How it arrives (a path on the CLI, a body on REST, a string on MCP) is the surface's business. (Needed by Varve's load, setup apply, apply and convert.)" .
+
+deed:required a rdf:Property ;
+    rdfs:domain deed:Parameter ; rdfs:range xsd:boolean ;
+    rdfs:comment "Whether the act cannot proceed without a value. Stated for every parameter, subject or modifier." .
+
+deed:repeatable a rdf:Property ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether a parameter or setting takes several values. Absent means one." .
+
+# -------------------------------------------------------------- 3. context
+
+deed:context a rdf:Property ;
+    rdfs:comment "What the environment supplies rather than the actor: one or more deed:Context, or deed:Nothing. Stated on an act. (No domain: a host command of the CLI binding layer takes contexts too.)" .
+
+deed:Context a rdfs:Class ;
+    rdfs:label "Context" ;
+    rdfs:comment "Something an act runs against or with that is fixed for a session rather than chosen per act: a target, a credential, a policy. A context is made of settings, and carries the failures that anything using it can meet." .
+
+deed:setting a rdf:Property ;
+    rdfs:domain deed:Context ; rdfs:range deed:Setting ;
+    rdfs:comment "One value the environment supplies for this context." .
+
+deed:Setting a rdfs:Class ;
+    rdfs:label "Setting" ;
+    rdfs:comment "One value of a context. Like a parameter it is defined once and has a name and a datatype; unlike a parameter it has no role, because the actor does not supply it per act." .
+
+# ---------------------------------------------------------------- 4. needs
+
+deed:needs a rdf:Property ;
+    rdfs:domain deed:Act ;
+    rdfs:comment "Existing state the act reads: one or more deed:State, or deed:Nothing." .
+
+deed:State a rdfs:Class ;
+    rdfs:label "State" ;
+    rdfs:comment "A named piece of state that acts read or write. Finer than a resource: a dataset's log, its checkpoints and its lease are three states of one resource, and an act that writes one need not be allowed to write another." .
+
+# -------------------------------------------------------------- 5. changes
+
+deed:changes a rdf:Property ;
+    rdfs:domain deed:Act ;
+    rdfs:comment "State the act writes: one or more deed:Change, or deed:Nothing." .
+
+deed:Change a rdfs:Class ;
+    rdfs:label "Change" ;
+    rdfs:comment "One write: which state, and in what manner." .
+
+deed:state a rdf:Property ;
+    rdfs:domain deed:Change ; rdfs:range deed:State .
+
+deed:manner a rdf:Property ;
+    rdfs:domain deed:Change ; rdfs:range deed:Manner ;
+    rdfs:comment "How the state is written. Effect is derived from the manners of an act's changes (ADR 0001, accepted 2026-11-15)." .
+
+deed:Manner a rdfs:Class .
+
+deed:Creates a deed:Manner ;
+    rdfs:label "creates" ;
+    rdfs:comment "Brings something into being that was not there. Doing it again fails or makes a second one." .
+
+deed:Appends a deed:Manner ;
+    rdfs:label "appends" ;
+    rdfs:comment "Adds to a history. What was there stays; doing it again adds again." .
+
+deed:Converges a deed:Manner ;
+    rdfs:label "converges" ;
+    rdfs:comment "Makes the state what the input declares, overwriting what differs. Doing it again changes nothing." .
+
+deed:Removes a deed:Manner ;
+    rdfs:label "removes" ;
+    rdfs:comment "Takes something away. Doing it again finds nothing to take." .
+
+# -------------------------------------------------------------- 6. outcome
+
+deed:outcome a rdf:Property ;
+    rdfs:domain deed:Act ; rdfs:range deed:Outcome ;
+    rdfs:comment "What the actor gets back when the act succeeds. Exactly one." .
+
+deed:Outcome a rdfs:Class .
+
+deed:Single a rdfs:Class ; rdfs:subClassOf deed:Outcome ;
+    rdfs:label "single outcome" ;
+    rdfs:comment "One value, complete when the act ends." .
+
+deed:Stream a rdfs:Class ; rdfs:subClassOf deed:Outcome ;
+    rdfs:label "stream outcome" ;
+    rdfs:comment "Zero or more values of one kind, delivered in order as they are produced." .
+
+deed:yields a rdf:Property ;
+    rdfs:domain deed:Outcome ;
+    rdfs:comment "What the value is, or what each value of a stream is: a class of the tool's vocabulary." .
+
+# ------------------------------------------------------------- 7. failures
+
+deed:failure a rdf:Property ;
+    rdfs:comment "A named way of failing. On an act: one or more deed:Failure of its own, or deed:Nothing. On a context: the failures every act using that context can meet, which the act does not repeat." .
+
+deed:Failure a rdfs:Class ;
+    rdfs:label "Failure" ;
+    rdfs:comment "One enumerated way an act can fail, named for what went wrong and described so that the actor knows what to do next. A failure leaves the actor without the outcome." .
+
+# ---------------------------------------------------------------- nothing
+
+deed:Nothing a deed:Absence ;
+    rdfs:label "nothing" ;
+    rdfs:comment "The explicit empty value of the input, context, needs, changes and failure facets. Saying it is a decision; omitting the facet is an error." .
+
+deed:Absence a rdfs:Class .
