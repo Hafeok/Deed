@@ -1,6 +1,6 @@
 # Deed: the act layer.
-# Draft 1, 2026-11-15. Status: working draft; nothing here is decided beyond
-# the project's Decided list. The namespace IRI is a proposal (findings, Q1).
+# The namespace is decided (ADR 0016). Each term traces to an ADR in docs/adr
+# or to an act in maps/ that needs it.
 #
 # An act is what a tool can do, described without reference to any surface.
 # Every surface (CLI, MCP, REST) is generated from this layer. No term here
@@ -42,7 +42,22 @@ deed:within a rdf:Property ;
 
 deed:Verb a rdfs:Class ;
     rdfs:label "Verb" ;
-    rdfs:comment "A verb from the controlled list. A verb means the same thing on every resource it is used with." .
+    rdfs:comment "A verb: one Deed ships, or one the application defines once. A verb means the same thing on every resource it is used with." .
+
+# The verbs Deed ships (ADR 0025). An application adds its own, each defined
+# once; it may spell a shipped verb differently with cli:name.
+
+deed:create a deed:Verb ; deed:name "create" ;
+    rdfs:comment "Bring the resource into being." .
+
+deed:show a deed:Verb ; deed:name "show" ;
+    rdfs:comment "Give the resource as it is now." .
+
+deed:list a deed:Verb ; deed:name "list" ;
+    rdfs:comment "Give every one of the resource." .
+
+deed:remove a deed:Verb ; deed:name "remove" ;
+    rdfs:comment "Take the resource away." .
 
 deed:name a rdf:Property ;
     rdfs:range xsd:string ;

@@ -57,12 +57,12 @@ pc:Proposal a deed:Resource ; deed:name "proposal" ;
     rdfs:comment "A change set an agent submitted, held beside the head with its reason until the author adopts or rejects it." .
 
 # =================================================================== verbs
+# create, show, list and remove are Deed's (ADR 0025); two are spelled
+# differently here.
 
 pc:init a deed:Verb ; deed:name "init" ; rdfs:comment "Set the resource up where there was none." .
-pc:create a deed:Verb ; deed:name "create" ; cli:name "new" ; rdfs:comment "Bring the resource into being." .
-pc:show a deed:Verb ; deed:name "show" ; rdfs:comment "Give the resource as it is now." .
-pc:list a deed:Verb ; deed:name "list" ; rdfs:comment "Give every one of the resource." .
-pc:remove a deed:Verb ; deed:name "remove" ; cli:name "rm" ; rdfs:comment "Take the resource away." .
+deed:create cli:name "new" .
+deed:remove cli:name "rm" .
 pc:validate a deed:Verb ; deed:name "validate" ; rdfs:comment "Check the resource against what it must satisfy, and report what it does not." .
 pc:export a deed:Verb ; deed:name "export" ; rdfs:comment "Give the whole content of the resource." .
 pc:derive a deed:Verb ; deed:name "derive" ; rdfs:comment "Compute the part of the resource that follows from the rest." .
@@ -202,7 +202,7 @@ pc:DiffDraft a deed:Act ;
 
 pc:CreateProduct a deed:Act ;
     rdfs:comment "Create a product root. Assumed: the new product is named by the product setting, since every verb takes it." ;
-    deed:resource pc:Product ; deed:verb pc:create ;
+    deed:resource pc:Product ; deed:verb deed:create ;
     deed:actor pc:Author ;
     deed:input ( pc:purpose pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -214,7 +214,7 @@ pc:CreateProduct a deed:Act ;
 
 pc:ListProducts a deed:Act ;
     rdfs:comment "Give the products of the repository." ;
-    deed:resource pc:Product ; deed:verb pc:list ;
+    deed:resource pc:Product ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -225,7 +225,7 @@ pc:ListProducts a deed:Act ;
 
 pc:ShowProduct a deed:Act ;
     rdfs:comment "Give a product's root: name, purpose, owned domains and systems." ;
-    deed:resource pc:Product ; deed:verb pc:show ;
+    deed:resource pc:Product ; deed:verb deed:show ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -238,7 +238,7 @@ pc:ShowProduct a deed:Act ;
 
 pc:CreateNode a deed:Act ;
     rdfs:comment "Capture a What node of one kind, as the author's own decision. A change set with a violation is refused and the draft is unchanged (W1)." ;
-    deed:resource pc:Node ; deed:verb pc:create ;
+    deed:resource pc:Node ; deed:verb deed:create ;
     deed:actor pc:Author ;
     deed:input ( pc:kind pc:id pc:properties pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -250,7 +250,7 @@ pc:CreateNode a deed:Act ;
 
 pc:ShowNode a deed:Act ;
     rdfs:comment "Give a node and its links." ;
-    deed:resource pc:Node ; deed:verb pc:show ;
+    deed:resource pc:Node ; deed:verb deed:show ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input ( pc:id ) ;
     deed:context pc:ProductTarget ;
@@ -261,7 +261,7 @@ pc:ShowNode a deed:Act ;
 
 pc:ListNodes a deed:Act ;
     rdfs:comment "Give the nodes of the What." ;
-    deed:resource pc:Node ; deed:verb pc:list ;
+    deed:resource pc:Node ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -272,7 +272,7 @@ pc:ListNodes a deed:Act ;
 
 pc:RemoveNode a deed:Act ;
     rdfs:comment "Remove a node and its links, as the author's own decision. The draft is a log, so the removal is a new position and the node remains in the history." ;
-    deed:resource pc:Node ; deed:verb pc:remove ;
+    deed:resource pc:Node ; deed:verb deed:remove ;
     deed:actor pc:Author ;
     deed:input ( pc:id pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -306,7 +306,7 @@ pc:ExportWhat a deed:Act ;
 
 pc:ListFormats a deed:Act ;
     rdfs:comment "Give each registered format: name, IRI, media type, supported editions, stability." ;
-    deed:resource pc:Format ; deed:verb pc:list ;
+    deed:resource pc:Format ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context deed:Nothing ;
@@ -388,7 +388,7 @@ pc:SimulateProjector a deed:Act ;
 
 pc:CreatePrimitive a deed:Act ;
     rdfs:comment "Declare a named-algorithm primitive: its reference, I/O contract and oracle pairs." ;
-    deed:resource pc:Primitive ; deed:verb pc:create ;
+    deed:resource pc:Primitive ; deed:verb deed:create ;
     deed:actor pc:Author ;
     deed:input ( pc:id pc:properties pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -411,7 +411,7 @@ pc:ValidatePrimitive a deed:Act ;
 
 pc:CreateScenario a deed:Act ;
     rdfs:comment "Author a scenario, or draw one from a flow." ;
-    deed:resource pc:Scenario ; deed:verb pc:create ;
+    deed:resource pc:Scenario ; deed:verb deed:create ;
     deed:actor pc:Author ;
     deed:input ( pc:id pc:properties pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -423,7 +423,7 @@ pc:CreateScenario a deed:Act ;
 
 pc:ListScenarios a deed:Act ;
     rdfs:comment "Give the product's scenarios." ;
-    deed:resource pc:Scenario ; deed:verb pc:list ;
+    deed:resource pc:Scenario ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -458,7 +458,7 @@ pc:RunConformance a deed:Act ;
 
 pc:CreateQuestion a deed:Act ;
     rdfs:comment "Record an open question: what the graph cannot yet decide, which nodes it concerns, what it blocks." ;
-    deed:resource pc:Question ; deed:verb pc:create ;
+    deed:resource pc:Question ; deed:verb deed:create ;
     deed:actor pc:Author ;
     deed:input ( pc:id pc:properties pc:why ) ;
     deed:context pc:ProductTarget ;
@@ -470,7 +470,7 @@ pc:CreateQuestion a deed:Act ;
 
 pc:ListQuestions a deed:Act ;
     rdfs:comment "Give the open questions." ;
-    deed:resource pc:Question ; deed:verb pc:list ;
+    deed:resource pc:Question ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent , pc:Realiser ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -495,7 +495,7 @@ pc:AnswerQuestion a deed:Act ;
 
 pc:CreateProposal a deed:Act ;
     rdfs:comment "Submit a change set as a proposal with its reason: shape-checked and phase-gated when submitted, held beside the head and not in it, attributed to the author. This is what every write by an agent is. The definition gives it no verb of its own: an agent calls the author's verbs and gets this (finding P1)." ;
-    deed:resource pc:Proposal ; deed:verb pc:create ;
+    deed:resource pc:Proposal ; deed:verb deed:create ;
     deed:actor pc:Agent ;
     deed:input ( pc:changeSet pc:reason ) ;
     deed:context pc:ProductTarget ;
@@ -507,7 +507,7 @@ pc:CreateProposal a deed:Act ;
 
 pc:ListProposals a deed:Act ;
     rdfs:comment "Number the pending proposals." ;
-    deed:resource pc:Proposal ; deed:verb pc:list ;
+    deed:resource pc:Proposal ; deed:verb deed:list ;
     deed:actor pc:Author , pc:Agent ;
     deed:input deed:Nothing ;
     deed:context pc:ProductTarget ;
@@ -518,7 +518,7 @@ pc:ListProposals a deed:Act ;
 
 pc:ShowProposal a deed:Act ;
     rdfs:comment "Give a proposal: its change set, reason, findings and alternatives." ;
-    deed:resource pc:Proposal ; deed:verb pc:show ;
+    deed:resource pc:Proposal ; deed:verb deed:show ;
     deed:actor pc:Author , pc:Agent ;
     deed:input ( pc:proposals ) ;
     deed:context pc:ProductTarget ;

@@ -1,0 +1,3 @@
+host	command	operands	options	flags	exit-codes	performs	note
+https://w3id.org/varve/acts#Serve	varve serve		--audience* --auth-mode --authority --config* --datasets-root --set* --urls	--anonymous --record-bootstrap	configuration-invalid=2		
+https://w3id.org/varve/acts#WatchKubernetes						https://w3id.org/varve/acts#TakeOverWriter	recorded spelling: manage watch-kubernetes

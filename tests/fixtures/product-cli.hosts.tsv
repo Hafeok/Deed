@@ -1,0 +1,4 @@
+host	command	operands	options	flags	exit-codes	performs	note
+https://w3id.org/deed/maps/product-cli#Mcp	product mcp		--product	--http			
+https://w3id.org/deed/maps/product-cli#Review						https://w3id.org/deed/maps/product-cli#AdoptProposal https://w3id.org/deed/maps/product-cli#RejectProposal	recorded spelling: proposal review
+https://w3id.org/deed/maps/product-cli#View	product view		--port --product			https://w3id.org/deed/maps/product-cli#AdoptProposal https://w3id.org/deed/maps/product-cli#RejectProposal	

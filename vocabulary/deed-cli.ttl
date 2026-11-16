@@ -1,5 +1,5 @@
 # Deed: the CLI binding layer.
-# Draft 1, 2026-11-15. Working draft.
+# Decided terms; each names the ADR or the command that forced it.
 #
 # The CLI is derived from the act layer by rule (findings, section 3). This
 # vocabulary holds only what the rules cannot derive. Each term names the
@@ -31,11 +31,11 @@ cli:command a rdf:Property ;
 
 cli:defaultResource a rdf:Property ;
     rdfs:domain cli:Tool ; rdfs:range deed:Resource ;
-    rdfs:comment "The resource whose name is left out of command paths. At most one. (Varve's dataset: create, load, query, update, export, checkpoint.) Pending Q2." .
+    rdfs:comment "The resource whose name is left out of command paths. At most one. (Varve's dataset: create, load, query, update, export, checkpoint.) (ADR 0007)" .
 
 cli:defaultVerb a rdf:Property ;
     rdfs:domain cli:Tool ; rdfs:range deed:Verb ;
-    rdfs:comment "The verb that is left out of command paths, so the resource name alone is the command. At most one. (Varve's show: info, feed, lease, storage.) Pending Q2." .
+    rdfs:comment "The verb that is left out of command paths, so the resource name alone is the command. At most one. (Varve's show: info, feed, lease, storage.) (ADR 0007)" .
 
 # ------------------------------------------------------------- assignments
 
@@ -60,7 +60,7 @@ cli:name a rdf:Property ;
     rdfs:comment "The token used on the CLI in place of deed:name. (status is spelled info; standby is spelled --server.)" .
 
 cli:bindAs a rdf:Property ;
-    rdfs:comment "Accepted 2026-11-15 (ADR 0002) for a target setting bound as an operand. Binds a parameter or setting against its rule: cli:Operand for a modifier or a setting, cli:Option for a subject. (Varve's dataset setting is an operand; its query text, a subject, is --query.)" .
+    rdfs:comment "Binds a setting or a subject against its rule: cli:Operand for the one target setting of a tool (ADR 0002, ADR 0018), cli:Option for a subject. A modifier is never an operand (ADR 0039). (Varve's dataset setting is an operand; its query text, a subject, is --query.)" .
 
 cli:Operand a cli:BindingKind .
 cli:Option  a cli:BindingKind .
@@ -80,11 +80,11 @@ cli:fileAlternative a rdf:Property ;
 
 cli:SurfaceOption a rdfs:Class ;
     rdfs:label "CLI-only option" ;
-    rdfs:comment "An option that exists because the surface is a command line, and corresponds to nothing in the act: how an outcome is written, where it is saved, how it is signalled. It has a deed:name, a deed:datatype and optionally a cli:short." .
+    rdfs:comment "An option that exists because the surface is a command line, and corresponds to nothing in the act: where an outcome is saved, or which syntax the same content is written in. If another surface would want it, it is a parameter of the act (ADR 0011). It has a deed:name, a deed:datatype and optionally a cli:short." .
 
 cli:surfaceOption a rdf:Property ;
     rdfs:domain deed:Act ; rdfs:range cli:SurfaceOption ;
-    rdfs:comment "A CLI-only option of this act's command. (--format on query and export)" .
+    rdfs:comment "A CLI-only option of this act's command. (Varve's --out on apply, which saves what another surface returns.)" .
 
 # ------------------------------------------------------------------- hosts
 # Accepted 2026-11-15 (ADR 0003): hosts are a CLI-layer kind, outside the act layer.
