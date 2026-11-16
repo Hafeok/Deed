@@ -43,3 +43,4 @@ jobs:
           done
           dotnet tool install --tool-path artifacts/tool --add-source artifacts --prerelease Deed.Tool
           artifacts/tool/deed validate maps/varve/varve-acts.ttl
+          artifacts/tool/deed model maps/varve/varve-acts.ttl | cmp - tests/fixtures/varve.model.json

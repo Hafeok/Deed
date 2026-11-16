@@ -3,7 +3,6 @@ using Varve.Rdf;
 using Varve.Shacl;
 using Varve.Shacl.Model;
 using Varve.Shacl.Sparql;
-using Varve.Turtle;
 
 namespace Deed.Vocabulary;
 
@@ -35,7 +34,15 @@ public static class ActMapValidator
     public static ValidationReport Validate(IEnumerable<TurtleDocument> maps)
     {
         ArgumentNullException.ThrowIfNull(maps);
-        InMemoryDataset data = Read([Vocabulary.Act, Vocabulary.Cli, .. maps]);
+        return Validate(ActMapSet.Read(maps));
+    }
+
+    /// <summary>Validates act maps already read.</summary>
+    /// <exception cref="ValidationRefusedException">The engine cannot run the shapes.</exception>
+    public static ValidationReport Validate(ActMapSet maps)
+    {
+        ArgumentNullException.ThrowIfNull(maps);
+        InMemoryDataset data = maps.Dataset;
 
         ValidationOutcome outcome = ShaclValidator.Validate(
             Shapes.Value, data, GraphPattern.DefaultGraph, Options, CancellationToken.None);
@@ -57,7 +64,7 @@ public static class ActMapValidator
 
     private static ShapesGraph LoadShapes()
     {
-        InMemoryDataset shapes = Read([Vocabulary.Shapes]);
+        InMemoryDataset shapes = ActMapSet.Parse([Vocabulary.Shapes], null, null, firstMap: 1);
         ShapesLoad load = ShapesGraph.Load(shapes, GraphPattern.DefaultGraph, Options, CancellationToken.None);
         if (!load.Succeeded || load.Shapes is null)
         {
@@ -66,48 +73,6 @@ public static class ActMapValidator
 
         return load.Shapes;
     }
-
-    /// <summary>Parses documents into one dataset, each document's blank nodes kept apart.</summary>
-    internal static InMemoryDataset Read(IReadOnlyList<TurtleDocument> documents)
-    {
-        InMemoryDatasetBuilder builder = new();
-        for (int i = 0; i < documents.Count; i++)
-        {
-            TurtleDocument document = documents[i];
-            string scope = $"d{i}-";
-            TurtleOptions options = new()
-            {
-                Syntax = RdfSyntax.Turtle,
-                BaseIri = document.BaseIri is null ? ReadOnlyMemory<byte>.Empty : Encoding.UTF8.GetBytes(document.BaseIri),
-            };
-
-            ParseResult parsed = TurtleParser.Parse(
-                document.Content.Span,
-                (in QuadView quad) => builder.Add(
-                    Scoped(quad.Subject.Materialise(), scope),
-                    Scoped(quad.Predicate.Materialise(), scope),
-                    Scoped(quad.Object.Materialise(), scope),
-                    null),
-                in options);
-
-            if (!parsed.Succeeded)
-            {
-                var error = parsed.FirstError;
-                throw new TurtleSyntaxException(
-                    document.Name, error.Position.Line, error.Position.Column, error.Position.ByteOffset, error.Kind.ToString());
-            }
-        }
-
-        return builder.ToDataset();
-    }
-
-    private static RdfTerm Scoped(RdfTerm term, string scope) => term.Kind switch
-    {
-        RdfTermKind.BlankNode => RdfTerm.BlankNode(Encoding.UTF8.GetBytes(scope + Encoding.UTF8.GetString(term.Lexical))),
-        RdfTermKind.TripleTerm => RdfTerm.TripleTerm(
-            Scoped(term.Subject!, scope), Scoped(term.Predicate!, scope), Scoped(term.Object!, scope)),
-        _ => term,
-    };
 
     private static ValidationResult ToResult(ShaclResult result) => new(
         ToSeverity(result.Severity),

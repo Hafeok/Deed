@@ -33,57 +33,13 @@ public sealed partial class ShapeTests
         Assert.All(Broken.Results, r => Assert.DoesNotContain("{?", r.Message, StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// The messages in <c>deed-shapes.ttl</c> that no result on the broken fixture carries,
-    /// under Varve.Shacl and, by the oracle, under pySHACL alike. Issue #33 expected none;
-    /// the fixture does not reach them (#36). Listed here so that a change is seen, not to excuse it.
-    /// </summary>
-    private static readonly string[] NotReachedByTheFixture =
+    /// <summary>The fixtures whose results, together, carry every message (issue #36).</summary>
+    private static readonly string[] Fixtures =
     [
-        "An act is about exactly one resource. What is th", // dsh:ActIdentity
-        "An act has exactly one verb from the controlled ", // dsh:ActIdentity
-        "The input is an ordered list of parameters, or d", // dsh:ActInput
-        "Everything in an act's input is a parameter defi", // dsh:ActInput
-        "A context is declared once for the tool, with it", // dsh:ActContext
-        "This act says it has no context and also names o", // dsh:ActContextNothingAlone
-        "What an act needs is a named state of the tool. ", // dsh:ActNeeds
-        "A change names one state and the manner it is wr", // dsh:ActChanges
-        "This act says it changes nothing and also names ", // dsh:ActChangesNothingAlone
-        "Is the outcome complete when the act ends (deed:", // dsh:ActOutcome
-        "A failure is declared once for the tool, with a ", // dsh:ActFailures
-        "This act says it cannot fail on its own account ", // dsh:ActFailuresNothingAlone
-        "A resource has one name: a singular noun, lower ", // dsh:Resource
-        "What is this resource, in one sentence? If it ca", // dsh:Resource
-        "A resource is part of at most one other. If it s", // dsh:Resource
-        "A verb has one name: a single verb in the impera", // dsh:Verb
-        "What does this verb mean on any resource? If the", // dsh:Verb
-        "What is this role called by the people who grant", // dsh:Actor
-        "What makes someone this actor: a grant, a creden", // dsh:Actor
-        "A parameter has one name, lower case, hyphenated", // dsh:Parameter
-        "Is this parameter what the act is performed on (", // dsh:Parameter
-        "What kind of value is this? If it is the content", // dsh:Parameter
-        "Can the act proceed without this parameter? Say ", // dsh:Parameter
-        "A yes-or-no value says how an act is done, never", // dsh:SubjectIsNotAFlag
-        "What does this context stand for, and for how lo", // dsh:Context
-        "What must the environment supply for this contex", // dsh:Context
-        "How does this context fail every act that uses i", // dsh:Context
-        "A setting has one name, lower case, hyphenated. ", // dsh:Setting
-        "What kind of value does the environment supply h", // dsh:Setting
-        "What is this setting, and what happens when the ", // dsh:Setting
-        "What is this state, and who may read it and who ", // dsh:State
-        "A failure has one name that a program can match ", // dsh:Failure
-        "What should the actor do next when this happens:", // dsh:Failure
-        "What does the user type to run this tool? One lo", // dsh:Tool
-        "Only one resource can go unnamed on the command ", // dsh:Tool
-        "Only one verb can go unsaid on the command line.", // dsh:Tool
-        "A short name is one letter or digit, and a tool ", // dsh:Short
-        "Only a failure has an exit code of its own. If s", // dsh:ExitCode
-        "A failure exits 1 unless it says otherwise, and ", // dsh:ExitCode
-        "This is bound against its rule: a subject as an ", // dsh:BindAs
-        "This is spelled differently on the command line ", // dsh:CliName
-        "This act's command line is recorded, not derived", // dsh:SpelledAs
-        "Why does only the command line need this option?", // dsh:SurfaceOption
-        "What does this command do until it is stopped? I", // dsh:Host
+        "maps/varve/varve-acts.ttl",
+        "maps/product-cli/product-acts.ttl",
+        "tests/fixtures/broken.ttl",
+        "tests/fixtures/broken-terms.ttl",
     ];
 
     [Fact]
@@ -98,15 +54,20 @@ public sealed partial class ShapeTests
         Assert.Equal(reachedByOracle, reachedByVarve);
     }
 
+    /// <summary>
+    /// Every message in <c>deed-shapes.ttl</c> is carried by a result on some fixture, so that no
+    /// shape can stop working in the engine without a test failing.
+    /// </summary>
     [Fact]
-    public void Messages_the_broken_fixture_does_not_reach()
+    public void Every_message_in_the_shapes_is_reached_by_some_fixture()
     {
-        List<string> notReached = [.. MessagesInShapes()
-            .Where(t => !Broken.Results.Any(r => Matches(t, r.Message)))
-            .Select(t => t[..Math.Min(48, t.Length)])];
+        List<string> templates = MessagesInShapes();
+        List<ValidationResult> results = [.. Fixtures.SelectMany(f => ActMapValidator.ValidateFiles([Repository.File(f)]).Results)];
 
-        Assert.Equal(NotReachedByTheFixture, notReached);
-        Assert.Equal(61, MessagesInShapes().Count);
+        List<string> notReached = [.. templates.Where(t => !results.Any(r => Matches(t, r.Message)))];
+
+        Assert.Empty(notReached);
+        Assert.Equal(61, templates.Count);
     }
 
     private static List<string> MessagesInShapes()

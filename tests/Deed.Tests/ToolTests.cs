@@ -61,18 +61,19 @@ public sealed class ToolTests
     }
 
     [Fact]
-    public void Results_are_grouped_by_focus_node_with_severity_and_full_message()
+    public void Results_are_grouped_by_focus_node_with_severity_and_full_message_iris_shortened()
     {
         Run run = Deed("validate", "tests/fixtures/broken.ttl");
 
-        // The entry for x:force: its heading once, then its results until a blank line.
+        // The entry for x:force: its heading once, then its results until a blank line. IRIs under a
+        // prefix the map declares are printed short (ADR 0022); the shapes' namespace is not declared there.
         string[] lines = run.Output.Split(Environment.NewLine);
-        Assert.Equal(1, lines.Count(l => l == "https://example.org/x#force"));
-        string[] entry = [.. lines.SkipWhile(l => l != "https://example.org/x#force").Skip(1).TakeWhile(l => l.Length > 0)];
+        Assert.Equal(1, lines.Count(l => l == "x:force"));
+        string[] entry = [.. lines.SkipWhile(l => l != "x:force").Skip(1).TakeWhile(l => l.Length > 0)];
 
         string[] expected =
         [
-            "  Violation: 'force' is also the name of https://example.org/x#path. A name means one thing across the tool. Are these the same parameter, or does one of them need a more exact name?",
+            "  Violation: 'force' is also the name of x:path. A name means one thing across the tool. Are these the same parameter, or does one of them need a more exact name?",
             "    (shape https://w3id.org/deed/shapes#NameMeansOneThing)",
             "  Violation: A required yes-or-no has only one useful value. What is the actor confirming? If it is that they have seen the current state, ask for that state instead.",
             "    (shape https://w3id.org/deed/shapes#FlagIsNotRequired)",
@@ -138,5 +139,80 @@ public sealed class ToolTests
 
         Assert.Equal(0, run.ExitCode);
         Assert.StartsWith("Usage: deed validate <map.ttl>...", run.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Model_writes_the_golden_model_to_standard_output()
+    {
+        Run run = Deed("model", "maps/varve/varve-acts.ttl");
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Equal(File.ReadAllText(Repository.File("tests/fixtures/varve.model.json")), run.Output);
+        Assert.Empty(run.Error);
+    }
+
+    [Theory]
+    [InlineData("--output")]
+    [InlineData("--output=")]
+    public void Model_writes_the_golden_model_to_a_file(string option)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"deed-{Guid.NewGuid():N}.json");
+        try
+        {
+            Run run = option == "--output"
+                ? Deed("model", "maps/product-cli/product-acts.ttl", option, path)
+                : Deed("model", "maps/product-cli/product-acts.ttl", option + path);
+
+            Assert.Equal(0, run.ExitCode);
+            Assert.Empty(run.Output);
+            Assert.Equal(File.ReadAllBytes(Repository.File("tests/fixtures/product-cli.model.json")), File.ReadAllBytes(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Model_on_a_map_with_violations_exits_1_and_writes_nothing()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"deed-{Guid.NewGuid():N}.json");
+        Run run = Deed("model", "tests/fixtures/broken.ttl", "--output", path);
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Empty(run.Output);
+        Assert.False(File.Exists(path));
+        Assert.Contains("22 violations, 0 warnings, 0 infos.", run.Error, StringComparison.Ordinal);
+        Assert.EndsWith("no model is written." + Environment.NewLine, run.Error, StringComparison.Ordinal);
+
+        Run toStandardOutput = Deed("model", "tests/fixtures/broken.ttl");
+        Assert.Equal(1, toStandardOutput.ExitCode);
+        Assert.Empty(toStandardOutput.Output);
+    }
+
+    [Fact]
+    public void Model_on_maps_that_cannot_be_derived_exits_1_naming_both_terms_shortened()
+    {
+        // Varve and product-cli together declare two tools.
+        Run run = Deed("model", "maps/varve/varve-acts.ttl", "maps/product-cli/product-acts.ttl");
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Empty(run.Output);
+        Assert.StartsWith("deed: cannot derive: The maps declare 2 tools: pc:Tool, varve:Tool.", run.Error, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("model")]
+    [InlineData("model", "maps/varve/varve-acts.ttl", "--output")]
+    [InlineData("model", "maps/varve/varve-acts.ttl", "--output=")]
+    [InlineData("model", "maps/varve/varve-acts.ttl", "--output", "a.json", "--output", "b.json")]
+    [InlineData("validate", "maps/varve/varve-acts.ttl", "--output", "a.json")]
+    public void Model_usage_errors_exit_2(params string[] args)
+    {
+        Run run = Deed(args);
+
+        Assert.Equal(2, run.ExitCode);
+        Assert.Empty(run.Output);
+        Assert.Contains("deed model <map.ttl>... [--output <file>]", run.Error, StringComparison.Ordinal);
     }
 }
